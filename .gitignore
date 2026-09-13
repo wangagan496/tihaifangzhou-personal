@@ -1,0 +1,26 @@
+/node_modules
+/oh_modules
+/local.properties
+/.idea
+**/build
+/.hvigor
+.cxx
+/.clangd
+/.clang-format
+/.clang-tidy
+**/.test
+/.appanalyzer
+/build-profile.json5
+/entry/demo-login.local.json
+/branch-verification/
+*.p12
+*.cer
+*.p7b
+
+# Local UI and document verification artifacts
+/.docx_*/
+/*.png
+/audio-*.json
+/device-*.json
+/layout-*.json
+/mine-*.json

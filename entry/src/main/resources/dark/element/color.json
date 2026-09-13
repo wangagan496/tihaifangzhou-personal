@@ -1,0 +1,100 @@
+{
+  "color": [
+    {
+      "name": "start_window_background",
+      "value": "#000000"
+    },
+    {
+      "name": "common_gray_01",
+      "value": "#686868"
+    },
+    {
+      "name": "common_gray_02",
+      "value": "#7B7B7B"
+    },
+    {
+      "name": "common_gray_03",
+      "value": "#999999"
+    },
+    {
+      "name": "common_gray_bg",
+      "value": "#0C0D0B"
+    },
+    {
+      "name": "common_gray_border",
+      "value": "#171816"
+    },
+    {
+      "name": "common_main_color",
+      "value": "#0592E3"
+    },
+    {
+      "name": "common_green",
+      "value": "#18553F"
+    },
+    {
+      "name": "common_blue",
+      "value": "#003499"
+    },
+    {
+      "name": "common_blue_bg",
+      "value": "#12141B"
+    },
+    {
+      "name": "tab_default_color",
+      "value": "#686868"
+    },
+    {
+      "name": "tab_selected_color",
+      "value": "#C3C1C6"
+    },
+    {
+      "name": "ih_bg_color",
+      "value": "#0A0A0A"
+    },
+    {
+      "name": "ih_gray_color",
+      "value": "#686868"
+    },
+    {
+      "name": "ih_text_color",
+      "value": "#CCCCCC"
+    },
+    {
+      "name": "white",
+      "value": "#000000"
+    },
+    {
+      "name": "bg_white",
+      "value": "#80E0E0E0"
+    },
+    {
+      "name": "black",
+      "value": "#ffffff"
+    },
+    {
+      "name": "hm_calendar_color",
+      "value": "#ffaa00"
+    },
+    {
+      "name": "hm_calendar_title",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "hm_calendar_invalid",
+      "value": "#3E3E3E"
+    },
+    {
+      "name": "hm_calendar_valid",
+      "value": "#7C86A2"
+    },
+    {
+      "name": "hm_calendar_arrow",
+      "value": "#c6c6c6"
+    },
+    {
+      "name": "hm_calendar_bg",
+      "value": "#2C2C2C"
+    }
+  ]
+}

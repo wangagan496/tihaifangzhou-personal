@@ -1,0 +1,25 @@
+{
+  "feature": "main",
+  "title": "题海方舟 · 基础框架",
+  "sourceCommit": "bb7163066b4708c20bc88a80b6df5d3485d5fad6",
+  "sources": [
+    "entry/src/main/ets/common/components/FilterButton.ets",
+    "entry/src/main/ets/common/components/IvSkeleton.ets",
+    "entry/src/main/ets/common/components/TgLoadingDialog.ets",
+    "entry/src/main/ets/common/utils/AuthPolicy.ets",
+    "entry/src/main/ets/common/utils/ContextManager.ets",
+    "entry/src/main/ets/common/utils/Logger.ets",
+    "entry/src/main/ets/common/utils/Permission.ets",
+    "entry/src/main/ets/common/utils/Theme.ets",
+    "entry/src/main/ets/common/utils/WindowManager.ets",
+    "entry/src/main/ets/entryability/EntryAbility.ets",
+    "entry/src/main/ets/entrybackupability/EntryBackupAbility.ets",
+    "entry/src/main/ets/pages/Index.ets"
+  ],
+  "pages": [
+    "pages/Index"
+  ],
+  "tests": [
+    "entry/src/test/Auth.test.ets"
+  ]
+}

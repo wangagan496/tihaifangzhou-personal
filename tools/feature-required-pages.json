@@ -1,0 +1,13 @@
+{
+  "main": ["pages/Index"],
+  "login": ["pages/LoginPage", "pages/AccountSettingsPage", "pages/PrivacyPage"],
+  "questions": ["pages/QuestionDetailPage"],
+  "search": ["pages/SearchPage", "pages/QuestionDetailPage"],
+  "project": ["pages/QuestionDetailPage"],
+  "interview": ["pages/QuestionDetailPage"],
+  "records": ["pages/MineQuestionsPage", "pages/QuestionDetailPage"],
+  "study": ["pages/StudyTimePage", "pages/ClockPage", "pages/QuestionDetailPage"],
+  "mine": ["pages/ProfileEditPage", "pages/SettingsPage", "pages/MessageSettingsPage", "pages/MineFeedbackPage", "pages/MineAboutPage"],
+  "word": ["pages/WordPage"],
+  "audio": ["pages/AudioPage"]
+}
