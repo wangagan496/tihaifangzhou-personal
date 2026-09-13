@@ -1,5 +1,21 @@
 {
   "src": [
-    "pages/Index"
+    "pages/Index",
+    "pages/LoginPage",
+    "pages/ClockPage",
+    "pages/RichTextPage",
+    "pages/QuestionDetailPage",
+    "pages/SearchPage",
+    "pages/ProfileEditPage",
+    "pages/StudyTimePage",
+    "pages/WordPage",
+    "pages/AudioPage",
+    "pages/SettingsPage",
+    "pages/AccountSettingsPage",
+    "pages/MessageSettingsPage",
+    "pages/MineQuestionsPage",
+    "pages/MineFeedbackPage",
+    "pages/MineAboutPage",
+    "pages/PrivacyPage"
   ]
 }

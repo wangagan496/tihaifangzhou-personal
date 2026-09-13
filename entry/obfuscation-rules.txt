@@ -17,8 +17,7 @@
 # -keep-property-name: specifies property names that you want to keep
 # -keep-global-name: specifies names that you want to keep in the global scope
 
-# Property names cross JSON, HTTP and RDB boundaries throughout this app.
-# Keep them stable instead of maintaining a fragile global property whitelist.
+-enable-property-obfuscation
 -enable-toplevel-obfuscation
 -enable-filename-obfuscation
 -enable-export-obfuscation
