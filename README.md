@@ -1,11 +1,6 @@
-# 题海方舟 · 题海方舟 · 基础框架
+# 题海方舟 · 单词学习
 
-当前仓库由源码快照重新初始化，不包含早期协作阶段的 Git 提交历史。原始协作仓库为 [wangagan496/tihaifangzhou](https://github.com/wangagan496/tihaifangzhou)。
-
-
-当前分支：`当前仓库由源码快照重新初始化，不包含早期协作阶段的 Git 提交历史。原始协作仓库为 [wangagan496/tihaifangzhou](https://github.com/wangagan496/tihaifangzhou)。
-
-main`。这里只包含可运行的基础框架，不包含业务页面。
+当前分支：`word`。这是可独立构建的功能参考分支，保留真实业务和必要依赖，供按功能学习及重写。
 
 完整应用在 `full`，分支职责、依赖边界、构建命令和学习顺序见 [分支说明](docs/BRANCHES.md)。
 
@@ -19,6 +14,10 @@ main`。这里只包含可运行的基础框架，不包含业务页面。
 ## 当前页面
 
 - `pages/Index`
+- `pages/AccountSettingsPage`
+- `pages/LoginPage`
+- `pages/PrivacyPage`
+- `pages/WordPage`
 
 ## 验证
 
