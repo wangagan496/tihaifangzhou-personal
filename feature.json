@@ -1,25 +1,60 @@
 {
-  "feature": "main",
-  "title": "题海方舟 · 基础框架",
+  "feature": "project",
+  "title": "项目题库",
   "sourceCommit": "bb7163066b4708c20bc88a80b6df5d3485d5fad6",
   "sources": [
     "entry/src/main/ets/common/components/FilterButton.ets",
     "entry/src/main/ets/common/components/IvSkeleton.ets",
+    "entry/src/main/ets/common/components/QuestionShareDialog.ets",
     "entry/src/main/ets/common/components/TgLoadingDialog.ets",
+    "entry/src/main/ets/common/utils/Auth.ets",
     "entry/src/main/ets/common/utils/AuthPolicy.ets",
     "entry/src/main/ets/common/utils/ContextManager.ets",
+    "entry/src/main/ets/common/utils/InterviewCatalog.ets",
+    "entry/src/main/ets/common/utils/InterviewIcon.ets",
     "entry/src/main/ets/common/utils/Logger.ets",
+    "entry/src/main/ets/common/utils/MineQuestionPolicy.ets",
+    "entry/src/main/ets/common/utils/MineQuestionStore.ets",
     "entry/src/main/ets/common/utils/Permission.ets",
+    "entry/src/main/ets/common/utils/QuestionListPolicy.ets",
+    "entry/src/main/ets/common/utils/StudyProgressStore.ets",
+    "entry/src/main/ets/common/utils/StudyTimePolicy.ets",
+    "entry/src/main/ets/common/utils/StudyTimeStore.ets",
     "entry/src/main/ets/common/utils/Theme.ets",
+    "entry/src/main/ets/common/utils/Tracking.ets",
+    "entry/src/main/ets/common/utils/TrackingPolicy.ets",
     "entry/src/main/ets/common/utils/WindowManager.ets",
+    "entry/src/main/ets/common/utils/request.ets",
     "entry/src/main/ets/entryability/EntryAbility.ets",
     "entry/src/main/ets/entrybackupability/EntryBackupAbility.ets",
-    "entry/src/main/ets/pages/Index.ets"
+    "entry/src/main/ets/models/AccountModel.ets",
+    "entry/src/main/ets/models/CategoryModel.ets",
+    "entry/src/main/ets/models/HomeModels.ets",
+    "entry/src/main/ets/models/QuestionDetailModel.ets",
+    "entry/src/main/ets/pages/AccountSettingsPage.ets",
+    "entry/src/main/ets/pages/Index.ets",
+    "entry/src/main/ets/pages/LoginPage.ets",
+    "entry/src/main/ets/pages/PrivacyPage.ets",
+    "entry/src/main/ets/pages/QuestionDetailPage.ets",
+    "entry/src/main/ets/views/home/QuestionFilterComp.ets",
+    "entry/src/main/ets/views/home/QuestionItemComp.ets",
+    "entry/src/main/ets/views/home/QuestionListComp.ets",
+    "entry/src/main/ets/views/home/TgTag.ets",
+    "entry/src/main/ets/views/project/Project.ets"
   ],
   "pages": [
-    "pages/Index"
+    "pages/Index",
+    "pages/AccountSettingsPage",
+    "pages/LoginPage",
+    "pages/PrivacyPage",
+    "pages/QuestionDetailPage"
   ],
   "tests": [
-    "entry/src/test/Auth.test.ets"
+    "entry/src/test/Auth.test.ets",
+    "entry/src/test/InterviewCatalog.test.ets",
+    "entry/src/test/MineQuestionPolicy.test.ets",
+    "entry/src/test/QuestionListPolicy.test.ets",
+    "entry/src/test/StudyTimePolicy.test.ets",
+    "entry/src/test/Tracking.test.ets"
   ]
 }
