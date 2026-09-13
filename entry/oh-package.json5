@@ -5,6 +5,8 @@
   "main": "",
   "author": "",
   "license": "",
-  "dependencies": {}
+  "dependencies": {
+    "libaudiopcm.so": "file:./src/main/cpp/types/libaudiopcm"
+  }
 }
 

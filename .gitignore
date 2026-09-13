@@ -24,3 +24,8 @@
 /device-*.json
 /layout-*.json
 /mine-*.json
+
+# Generated device-test audio (tools/create-transcription-fixtures.ps1)
+/entry/src/ohosTest/resources/rawfile/transcription_fixture.m4a
+/entry/src/ohosTest/resources/rawfile/transcription_silence.m4a
+/entry/src/ohosTest/resources/rawfile/transcription_long.m4a

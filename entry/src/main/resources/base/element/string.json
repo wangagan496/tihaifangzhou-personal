@@ -1,5 +1,7 @@
 {
   "string": [
+    { "name": "study_card_name", "value": "学习快捷卡片" },
+    { "name": "study_card_description", "value": "从桌面进入题库、收藏复习和面试录音，不展示个人数据" },
     {
       "name": "module_desc",
       "value": "module description"

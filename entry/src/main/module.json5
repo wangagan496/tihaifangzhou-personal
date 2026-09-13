@@ -1,8 +1,15 @@
 {
   "module": {
-    "requestPermissions": [
+    "requestPermissions": [{
+      "name": "ohos.permission.INTERNET"
+    },
       {
-        "name": "ohos.permission.INTERNET"
+        "name": "ohos.permission.MICROPHONE",
+        "usedScene": {
+          "abilities": ["EntryAbility"],
+          "when": "inuse"
+        },
+        "reason": "$string:reason_record"
       }
     ],
     "name": "entry",
@@ -39,6 +46,15 @@
     ],
     "extensionAbilities": [
       {
+        "name": "StudyFormAbility",
+        "srcEntry": "./ets/entryformability/StudyFormAbility.ets",
+        "label": "$string:study_card_name",
+        "description": "$string:study_card_description",
+        "type": "form",
+        "exported": true,
+        "metadata": [{ "name": "ohos.extension.form", "resource": "$profile:study_form_config" }]
+      },
+      {
         "name": "EntryBackupAbility",
         "srcEntry": "./ets/entrybackupability/EntryBackupAbility.ets",
         "type": "backup",
@@ -48,7 +64,7 @@
             "name": "ohos.extension.backup",
             "resource": "$profile:backup_config"
           }
-        ]
+        ],
       }
     ]
   }

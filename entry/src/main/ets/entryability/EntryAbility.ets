@@ -3,12 +3,17 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
 import { DEMO_PASSWORD, DEMO_USERNAME } from 'BuildProfile';
 import { theme } from '../common/utils/Theme';
+import { appDiagnostics } from '../common/utils/AppDiagnostics';
+import { studyCardRoute } from '../common/utils/StudyCardPolicy';
+import { readAloud } from '../common/utils/ReadAloud';
+import { openPendingStudyCard } from '../common/utils/StudyCardNavigation';
 
 const DOMAIN = 0x0000;
 const DEMO_USERNAME_PARAM = 'demoUsername';
 const DEMO_PASSWORD_PARAM = 'demoPassword';
 
 export default class EntryAbility extends UIAbility {
+  private mainWindow?: window.Window
   // 启动链路的第一步：保存 Context，供 Preferences、RDB 等非组件工具使用。
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
     AppStorage.setOrCreate('context', this.context)
@@ -16,11 +21,26 @@ export default class EntryAbility extends UIAbility {
     AppStorage.setOrCreate(DEMO_USERNAME_PARAM, DEMO_USERNAME)
     AppStorage.setOrCreate(DEMO_PASSWORD_PARAM, DEMO_PASSWORD)
     this.applyDemoLoginParameters(want)
+    this.receiveCardAction(want)
     hilog.info(DOMAIN, 'EntryAbility', 'Ability onCreate');
+    appDiagnostics.start(this.context)
   }
 
   onNewWant(want: Want, launchParam: AbilityConstant.LaunchParam): void {
     this.applyDemoLoginParameters(want)
+    this.receiveCardAction(want)
+  }
+
+  private receiveCardAction(want: Want): void {
+    const action = want.parameters?.['studyCardAction']
+    if (typeof action !== 'string' || !studyCardRoute(action)) { return }
+    AppStorage.setOrCreate('studyCardAction', action)
+    this.openCardAction()
+  }
+
+  private openCardAction(): void {
+    const win = this.mainWindow
+    if (win) { openPendingStudyCard(win.getUIContext()) }
   }
 
   private applyDemoLoginParameters(want: Want): void {
@@ -42,6 +62,8 @@ export default class EntryAbility extends UIAbility {
   }
 
   onDestroy(): void {
+    readAloud.stop()
+    appDiagnostics.stop()
     hilog.info(DOMAIN, 'EntryAbility', 'Ability onDestroy');
   }
 
@@ -55,10 +77,13 @@ export default class EntryAbility extends UIAbility {
         return;
       }
       hilog.info(DOMAIN, 'EntryAbility', 'Succeeded in loading content.');
+      this.mainWindow = windowStage.getMainWindowSync()
+      this.openCardAction()
     });
   }
 
   onWindowStageDestroy(): void {
+    this.mainWindow = undefined
     hilog.info(DOMAIN, 'EntryAbility', 'Ability onWindowStageDestroy');
   }
 
@@ -67,6 +92,7 @@ export default class EntryAbility extends UIAbility {
   }
 
   onBackground(): void {
+    readAloud.stop()
     hilog.info(DOMAIN, 'EntryAbility', 'Ability onBackground');
   }
 }

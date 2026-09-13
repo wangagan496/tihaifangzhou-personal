@@ -1,0 +1,18 @@
+{
+  "forms": [
+    {
+      "name": "StudyCard",
+      "displayName": "$string:study_card_name",
+      "description": "$string:study_card_description",
+      "src": "./ets/widget/pages/StudyCard.ets",
+      "uiSyntax": "arkts",
+      "window": { "designWidth": 360, "autoDesignWidth": true },
+      "colorMode": "light",
+      "isDefault": true,
+      "isDynamic": true,
+      "updateEnabled": false,
+      "supportDimensions": ["2*2", "2*4"],
+      "defaultDimension": "2*2"
+    }
+  ]
+}

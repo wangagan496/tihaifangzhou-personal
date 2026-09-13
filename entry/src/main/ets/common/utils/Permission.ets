@@ -7,6 +7,16 @@ import { abilityAccessCtrl, PermissionRequestResult, Permissions } from '@kit.Ab
 class Permission {
   private isAllow: boolean = false
 
+  async hasPermissions(permissions: Permissions[]): Promise<boolean> {
+    const ctx = AppStorage.get<Context>('context')
+    if (!ctx) { return false }
+    try {
+      const mgr = abilityAccessCtrl.createAtManager()
+      const results = await Promise.all(permissions.map((name) => mgr.checkAccessToken(ctx.applicationInfo.accessTokenId, name)))
+      return results.every((status) => status === abilityAccessCtrl.GrantStatus.PERMISSION_GRANTED)
+    } catch (_) { return false }
+  }
+
   async requestPermissions(permissions: Permissions[]): Promise<boolean> {
     const mgr = abilityAccessCtrl.createAtManager()
     const ctx = AppStorage.get<Context>('context')
