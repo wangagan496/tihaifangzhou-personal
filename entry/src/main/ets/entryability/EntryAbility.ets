@@ -1,7 +1,6 @@
 import { AbilityConstant, Configuration, UIAbility, Want } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
-import { DEMO_PASSWORD, DEMO_USERNAME } from 'BuildProfile';
 import { theme } from '../common/utils/Theme';
 
 const DOMAIN = 0x0000;
@@ -13,8 +12,8 @@ export default class EntryAbility extends UIAbility {
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
     AppStorage.setOrCreate('context', this.context)
     AppStorage.setOrCreate('SYSTEM_COLOR_MODE', this.context.config.colorMode)
-    AppStorage.setOrCreate(DEMO_USERNAME_PARAM, DEMO_USERNAME)
-    AppStorage.setOrCreate(DEMO_PASSWORD_PARAM, DEMO_PASSWORD)
+    AppStorage.setOrCreate(DEMO_USERNAME_PARAM, '')
+    AppStorage.setOrCreate(DEMO_PASSWORD_PARAM, '')
     this.applyDemoLoginParameters(want)
     hilog.info(DOMAIN, 'EntryAbility', 'Ability onCreate');
   }

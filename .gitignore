@@ -11,8 +11,6 @@
 **/.test
 /.appanalyzer
 /build-profile.json5
-/entry/demo-login.local.json
-/branch-verification/
 *.p12
 *.cer
 *.p7b
