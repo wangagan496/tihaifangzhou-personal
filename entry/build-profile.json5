@@ -4,31 +4,13 @@
     "resOptions": {
       "copyCodeResource": {
         "enable": false
-      },
-      "excludeHarRes": [
-        "@ohos/axios",
-        "@ohmos/calendar"
-      ]
+      }
     }
   },
   "buildOptionSet": [
     {
-      "name": "debug",
-      "arkOptions": {
-        // 仅供 Debug 演示自动填充；Release 构建使用下方空值。
-        "buildProfileFields": {
-          "DEMO_USERNAME": "",
-          "DEMO_PASSWORD": ""
-        }
-      }
-    },
-    {
       "name": "release",
       "arkOptions": {
-        "buildProfileFields": {
-          "DEMO_USERNAME": "",
-          "DEMO_PASSWORD": ""
-        },
         "obfuscation": {
           "ruleOptions": {
             "enable": true,

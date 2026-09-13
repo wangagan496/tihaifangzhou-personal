@@ -7,20 +7,8 @@ export function hasLoginToken(token: string | undefined): boolean {
   return token !== undefined && token.length > 0
 }
 
-export function isUnauthorizedStatus(status: number | string | undefined): boolean {
-  return Number(status) === 401
-}
-
-export function shouldAttachAuth(url: string | undefined): boolean {
-  if (!url) {
-    return true
-  }
-  const path = url.split('?')[0]
-  return !(
-    path.endsWith('/hm/login') ||
-    path.endsWith('/hm/question/type') ||
-    path.endsWith('/hm/question/list')
-  )
+export function isUnauthorizedStatus(status: number | undefined): boolean {
+  return status === 401
 }
 
 export function buildAuthBackParams(url: string, params: Object | undefined): AuthBackParams {
