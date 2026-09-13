@@ -1,25 +1,56 @@
 {
-  "feature": "main",
-  "title": "题海方舟 · 基础框架",
-  "sourceCommit": "bb7163066b4708c20bc88a80b6df5d3485d5fad6",
+  "feature": "mine",
+  "title": "个人中心",
+  "sourceCommit": "5bf5dcad9c56a722a21b2bd2818b065d0e87fba6",
   "sources": [
     "entry/src/main/ets/common/components/FilterButton.ets",
     "entry/src/main/ets/common/components/IvSkeleton.ets",
     "entry/src/main/ets/common/components/TgLoadingDialog.ets",
+    "entry/src/main/ets/common/utils/Auth.ets",
     "entry/src/main/ets/common/utils/AuthPolicy.ets",
     "entry/src/main/ets/common/utils/ContextManager.ets",
     "entry/src/main/ets/common/utils/Logger.ets",
+    "entry/src/main/ets/common/utils/MessageSettingsStore.ets",
+    "entry/src/main/ets/common/utils/MineFeedbackStore.ets",
+    "entry/src/main/ets/common/utils/MineShare.ets",
     "entry/src/main/ets/common/utils/Permission.ets",
+    "entry/src/main/ets/common/utils/ProfilePolicy.ets",
+    "entry/src/main/ets/common/utils/StudyTimePolicy.ets",
+    "entry/src/main/ets/common/utils/StudyTimeStore.ets",
     "entry/src/main/ets/common/utils/Theme.ets",
     "entry/src/main/ets/common/utils/WindowManager.ets",
+    "entry/src/main/ets/common/utils/request.ets",
     "entry/src/main/ets/entryability/EntryAbility.ets",
     "entry/src/main/ets/entrybackupability/EntryBackupAbility.ets",
-    "entry/src/main/ets/pages/Index.ets"
+    "entry/src/main/ets/models/AccountModel.ets",
+    "entry/src/main/ets/pages/AccountSettingsPage.ets",
+    "entry/src/main/ets/pages/Index.ets",
+    "entry/src/main/ets/pages/LoginPage.ets",
+    "entry/src/main/ets/pages/MessageSettingsPage.ets",
+    "entry/src/main/ets/pages/MineAboutPage.ets",
+    "entry/src/main/ets/pages/MineFeedbackPage.ets",
+    "entry/src/main/ets/pages/PrivacyPage.ets",
+    "entry/src/main/ets/pages/ProfileEditPage.ets",
+    "entry/src/main/ets/pages/SettingsPage.ets",
+    "entry/src/main/ets/views/SettingsPage/SettingsThemeDialog.ets",
+    "entry/src/main/ets/views/mine/Mine.ets",
+    "entry/src/main/ets/views/mine/MineProfileHeader.ets",
+    "entry/src/main/ets/views/mine/MineToolsList.ets"
   ],
   "pages": [
-    "pages/Index"
+    "pages/Index",
+    "pages/AccountSettingsPage",
+    "pages/LoginPage",
+    "pages/MessageSettingsPage",
+    "pages/MineAboutPage",
+    "pages/MineFeedbackPage",
+    "pages/PrivacyPage",
+    "pages/ProfileEditPage",
+    "pages/SettingsPage"
   ],
   "tests": [
-    "entry/src/test/Auth.test.ets"
+    "entry/src/test/Auth.test.ets",
+    "entry/src/test/ProfilePolicy.test.ets",
+    "entry/src/test/StudyTimePolicy.test.ets"
   ]
 }
