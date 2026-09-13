@@ -2,10 +2,7 @@
 
 当前仓库由源码快照重新初始化，不包含早期协作阶段的 Git 提交历史。原始协作仓库为 [wangagan496/tihaifangzhou](https://github.com/wangagan496/tihaifangzhou)。
 
-
-当前分支：`当前仓库由源码快照重新初始化，不包含早期协作阶段的 Git 提交历史。原始协作仓库为 [wangagan496/tihaifangzhou](https://github.com/wangagan496/tihaifangzhou)。
-
-main`。这里只包含可运行的基础框架，不包含业务页面。
+当前分支：`main`。这里只包含可运行的基础框架，不包含业务页面。
 
 完整应用在 `full`，分支职责、依赖边界、构建命令和学习顺序见 [分支说明](docs/BRANCHES.md)。
 
