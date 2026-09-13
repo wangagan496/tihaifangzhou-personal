@@ -1,5 +1,11 @@
 {
   "src": [
-    "pages/Index"
+    "pages/Index",
+    "pages/AccountSettingsPage",
+    "pages/ClockPage",
+    "pages/LoginPage",
+    "pages/PrivacyPage",
+    "pages/QuestionDetailPage",
+    "pages/StudyTimePage"
   ]
 }
