@@ -11,6 +11,7 @@ import diagnosticPolicyTest from './DiagnosticPolicy.test'
 import transcriptionPolicyTest from './TranscriptionPolicy.test'
 import studyIntegrationTest from './StudyIntegration.test'
 import scoreSettingsPolicyTest from './ScoreSettingsPolicy.test'
+import messageReminderPolicyTest from './MessageReminderPolicy.test'
 
 export default function testsuite() {
   trackingTest()
@@ -26,4 +27,5 @@ export default function testsuite() {
   transcriptionPolicyTest()
   studyIntegrationTest()
   scoreSettingsPolicyTest()
+  messageReminderPolicyTest()
 }

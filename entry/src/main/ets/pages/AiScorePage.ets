@@ -6,8 +6,10 @@ import { AiScoreInput, AiScoreResult, scoreInputError } from '../common/utils/Ai
 import { ReadAloudControl } from '../common/components/ReadAloudControl'
 import { readAloud } from '../common/utils/ReadAloud'
 import { scoreCredentialStore, ScoreConnectionState } from '../common/utils/ScoreCredentialStore'
+import { audioDB } from '../common/utils/AudioDB'
+import { canSaveTranscript, scoreWriteBackId } from '../common/utils/TranscriptionPolicy'
 
-interface ScoreRoute { question?: string; answer?: string; referenceAnswer?: string }
+interface ScoreRoute { question?: string; answer?: string; referenceAnswer?: string; audioId?: number | string }
 
 @Entry
 @Component
@@ -21,8 +23,10 @@ struct AiScorePage {
   @State message: string = ''
   @State connection: ScoreConnectionState = 'loading'
   @State result?: AiScoreResult = undefined
+  @State writeBackBusy: boolean = false
   private owner: string = ''
   private token: string = ''
+  private audioId: number = 0
   private active: boolean = false
   private generation: number = 0
   private settingsSequence: number = 0
@@ -34,6 +38,7 @@ struct AiScorePage {
     this.question = typeof params?.question === 'string' ? params.question : ''
     this.answer = typeof params?.answer === 'string' ? params.answer : ''
     this.referenceAnswer = typeof params?.referenceAnswer === 'string' ? params.referenceAnswer : ''
+    this.audioId = scoreWriteBackId(params?.audioId)
   }
   aboutToDisappear(): void { this.active = false; this.cancel(); this.settingsSequence++ }
   onPageHide(): void { this.cancel(); this.settingsSequence++ }
@@ -47,7 +52,7 @@ struct AiScorePage {
   private openSettings(): void { auth.checkAuth({ url: 'pages/ScoreSettingsPage' }) }
   private accountChanged(): void {
     if (this.owner === (auth.getUser()?.id || '') && this.token === (auth.getUser()?.token || '')) { return }
-    this.cancel(); this.result = undefined; this.answer = ''; this.question = ''; this.referenceAnswer = ''
+    this.cancel(); this.result = undefined; this.answer = ''; this.question = ''; this.referenceAnswer = ''; this.audioId = 0
     this.owner = auth.getUser()?.id || ''; this.token = auth.getUser()?.token || ''
     this.message = '登录状态已变更，请重新打开评分页面'
     this.refreshConnection()
@@ -58,6 +63,20 @@ struct AiScorePage {
     this.busy = false
   }
   private edited(): void { this.result = undefined; this.message = '' }
+
+  private canWriteBack(): boolean {
+    return this.audioId > 0 && !!this.owner && canSaveTranscript(this.audioId, this.owner, this.answer)
+  }
+
+  private async writeBack(): Promise<void> {
+    if (this.busy || this.writeBackBusy || !this.canWriteBack()) { return }
+    this.writeBackBusy = true
+    try {
+      if (!await audioDB.initStore()) { this.message = '录音数据初始化失败，文字稿未改写'; return }
+      const saved = await audioDB.saveTranscript(this.audioId, this.owner, this.answer.trim())
+      this.message = saved ? '当前回答已写回本机录音文字稿' : '文字稿写回未确认，请重试'
+    } finally { this.writeBackBusy = false }
+  }
 
   private async submit(): Promise<void> {
     if (this.busy) { return }
@@ -141,6 +160,11 @@ struct AiScorePage {
           Button(this.busy ? '取消评分' : '提交 AI 评分').width('100%').height(48).id('submitAiScore')
             .enabled(this.busy || this.connection !== 'loading')
             .onClick(() => { if (this.busy) { this.cancel() } else { this.submit() } })
+          if (this.audioId > 0) {
+            Button(this.writeBackBusy ? '正在写回…' : '保存到录音文字稿').width('100%').height(48)
+              .id('writeBackTranscript').enabled(!this.busy && !this.writeBackBusy && this.canWriteBack())
+              .onClick(() => this.writeBack())
+          }
           if (this.result) {
             Text(`${this.result.score} / 100`).fontSize(30).fontColor($r('app.color.common_blue')).id('aiScoreValue')
             Text(this.result.summary).fontSize(16).lineHeight(26).fontColor($r('app.color.black'))

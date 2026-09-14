@@ -69,6 +69,15 @@ export function canSaveTranscript(audioId: number, userId: string, text: string)
     text.trim().length > 0 && text.length <= MAX_TRANSCRIPT_LENGTH
 }
 
+export function transcriptDraftChanged(saved: string, draft: string): boolean {
+  return draft.trim() !== saved.trim() && draft.trim().length > 0
+}
+
+export function scoreWriteBackId(audioId: number | string | undefined): number {
+  const value = typeof audioId === 'string' ? Number(audioId) : audioId
+  return typeof value === 'number' && Number.isSafeInteger(value) && value > 0 ? value : 0
+}
+
 export function transcriptionErrorMessage(code: string): string {
   switch (code) {
     case 'CANCELLED': return '已取消转写，原录音和已有文字均已保留'

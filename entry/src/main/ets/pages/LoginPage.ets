@@ -3,6 +3,7 @@ import { tgRequest } from '../common/utils/request'
 import { ILoginBody, ILoginDta } from '../models/AccountModel'
 import { router } from '@kit.ArkUI'
 import { contextManager } from '../common/utils/ContextManager'
+import { mineQuestionStore } from '../common/utils/MineQuestionStore'
 
 @Entry
 @Component
@@ -44,6 +45,9 @@ struct LoginPage {
         user.username = username
       }
       auth.setUser(user)
+      if (user.id) {
+        mineQuestionStore.pull(user.id).then((): void => {}, (): void => {})
+      }
       const params = this.getUIContext().getRouter().getParams() as IRouterBackParams
       const navigation = params
         ? this.getUIContext().getRouter().replaceUrl({ url: params.backUrl, params: params.backParams })

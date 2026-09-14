@@ -25,7 +25,7 @@
 | 单词学习 | 单词浏览及英文发音播放 |
 | 面试录音 | 麦克风录音、播放、重命名、删除；录音元数据保存在本地数据库 |
 | 朗读与桌面卡片 | 题目/面经及录音文字稿离线朗读；桌面服务卡片快捷进入题库、收藏和录音 |
-| AI 回答评分 | 已接入客户端与独立 TypeScript/Fastify 后端；真实模型待配置，默认不发送数据、不生成评分 |
+| AI 回答评分 | 已接入客户端与独立 TypeScript/Fastify 后端；未配置不发送、不编分数。本机可接 `qwen3.7-flash`，API 24 模拟器已跑通一次真实评分 |
 | 外观与隐私 | 浅色/深色/跟随系统主题，用户协议与隐私政策入口 |
 
 ## 技术栈
@@ -126,6 +126,8 @@ hvigorw assembleHap
 | 原生启动冻屏复查 | 发现同时间 RenderService 先 SERVICE_BLOCK、应用后 THREAD_BLOCK_6S 的系统故障；保留数据重启模拟器后 7 次冷启动未新增同类报告，未声称修补模拟器底层缺陷 |
 | 演示配置隔离 | Debug 本机注入生效；Release 生成的两个演示字段均为空；本机配置未入库 |
 
+2026-09-14 在同一 API 24 模拟器上补充：本机 Fastify 调用 `qwen3.7-flash` 返回真实评分；应用内完成评分提交；消息设置、测试通知、取消收藏后返回列表刷新。证据在 `branch-verification/live-score`、`device-gaps`。未覆盖实体机、完整读屏、公网部署。未配置时客户端仍不发送评分请求，后端缺密钥仍返回 503。
+
 主包编译仍会输出两条符合当前设计的权限静态提示：`SaveButton` 使用系统临时图库授权保存分享图；录音页所需麦克风权限已在模块中声明，并在运行时向用户申请。
 
 ## 服务端与数据说明
@@ -153,11 +155,11 @@ https://api-harmony-teach.itheima.net
 - 登录用户与主题偏好：`PersistentStorage` / `AppStorage`。
 - 面试录音元数据：RDB 数据库 `interview_audio.db`，按用户和创建时间索引。
 - 普通题阅读时长：`preferences` 中的 `trackFile`；每累计 5 条记录后尝试批量上报，失败时保留待下次重试。面经按次上报停留时间和是否读到底。
-- 我的内容记录：`common/utils/MineQuestionStore.ets` 使用 `preferences` 的 `mineQuestions` 文件，按用户 ID 和内容类型保存题目/面经的历史记录、收藏和点赞列表。
-- 意见反馈：`pages/MineFeedbackPage.ets` 使用 `preferences` 的 `feedback` 文件保存最近一次反馈；当前没有对应的服务端反馈接口。
-- 消息设置：`common/utils/MessageSettingsStore.ets` 使用 `preferences` 的 `messageSettings` 文件保存学习进度、复习提醒、功能更新及声音振动偏好；`MessageSettingsPage.ets` 可检测系统通知权限并发送测试通知。
+- 我的内容记录：`common/utils/MineQuestionStore.ets` 使用 `preferences` 的 `mineQuestions` 文件，按用户 ID 和内容类型保存题目/面经的历史记录、收藏和点赞列表。配置独立评分服务后，登录和写入会尽力同步到 `/v1/records`；失败不影响本机列表。课堂题库没有「我的列表」查询接口。
+- 意见反馈：`pages/MineFeedbackPage.ets` 始终写入本机 `feedback` Preferences。已配置评分服务时再 `POST /v1/feedback`；界面区分「已送达」和「仅本机」，不把本机保存说成服务端成功。
+- 消息设置：`common/utils/MessageSettingsStore.ets` 保存学习进度、复习提醒、功能更新及声音振动偏好。复习和学习进度会注册系统提醒；「功能更新」只存开关，没有版本推送通道。`MessageSettingsPage.ets` 可检测通知权限并发送测试通知。
 
-题目和面经详情中的点赞、收藏仍通过服务端接口更新；“我的收藏”和“我的点赞”列表是客户端按用户隔离的本地镜像。推荐分享调用系统分享面板，不依赖项目自建分享接口。
+题目和面经详情中的点赞、收藏仍通过课堂服务端接口更新；“我的收藏”和“我的点赞”列表以本机为源，独立记录服务是附加同步。推荐分享调用系统分享面板，不依赖项目自建分享接口。
 
 如果要切换到自有后端，请仅修改网络层的 `baseURL`，并确保接口响应保持 `{ code, data, message, success }` 结构；当前成功业务码为 `10000`。
 

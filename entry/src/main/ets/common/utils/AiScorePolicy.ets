@@ -20,6 +20,23 @@ export function scoreInputError(input: AiScoreInput): string {
   return ''
 }
 
+export function feedbackEndpoint(scoreUrl: string, allowLocal: boolean = false): string {
+  if (!validScoringUrl(scoreUrl, allowLocal) || !scoreUrl.endsWith('/v1/scores')) { return '' }
+  return `${scoreUrl.slice(0, scoreUrl.length - '/v1/scores'.length)}/v1/feedback`
+}
+
+export function recordsEndpoint(scoreUrl: string, allowLocal: boolean = false): string {
+  if (!validScoringUrl(scoreUrl, allowLocal) || !scoreUrl.endsWith('/v1/scores')) { return '' }
+  return `${scoreUrl.slice(0, scoreUrl.length - '/v1/scores'.length)}/v1/records`
+}
+
+export function feedbackInputError(content: string): string {
+  const value = content.trim()
+  if (!value) { return '请先填写反馈内容' }
+  if (value.length > 4000) { return '反馈最多 4000 字，请精简后提交' }
+  return ''
+}
+
 export function validScoringUrl(endpoint: string, allowLocal: boolean = false): boolean {
   // Fixed API path; forbid credentials, query strings, fragments and encoded host tricks.
   const match = /^(https):\/\/([A-Za-z0-9.-]+)(?::([0-9]{1,5}))?\/v1\/scores$/.exec(endpoint)

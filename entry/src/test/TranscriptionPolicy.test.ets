@@ -1,7 +1,7 @@
 import { describe, expect, it } from '@ohos/hypium'
 import { TranscriptAccumulator, canSaveTranscript, transcriptionPercent, transcriptionErrorMessage,
   recognitionEngineOptions, recognitionStreamOptions, choosePcmSegmentLength,
-  PCM_MAX_SESSION_BYTES } from '../main/ets/common/utils/TranscriptionPolicy'
+  PCM_MAX_SESSION_BYTES, transcriptDraftChanged, scoreWriteBackId } from '../main/ets/common/utils/TranscriptionPolicy'
 
 export default function transcriptionPolicyTest() {
   describe('TranscriptionPolicyTest', () => {
@@ -52,6 +52,15 @@ export default function transcriptionPolicyTest() {
       expect(canSaveTranscript(1, '', '文字')).assertFalse()
       expect(canSaveTranscript(1, 'user', ' ')).assertFalse()
       expect(canSaveTranscript(1, 'user', '字'.repeat(60001))).assertFalse()
+    })
+    it('detectsTranscriptRevisionsAndSafeScoreWriteBackIds', 0, () => {
+      expect(transcriptDraftChanged('原稿', ' 原稿 ')).assertFalse()
+      expect(transcriptDraftChanged('原稿', '修订')).assertTrue()
+      expect(transcriptDraftChanged('原稿', '   ')).assertFalse()
+      expect(scoreWriteBackId(12)).assertEqual(12)
+      expect(scoreWriteBackId('12')).assertEqual(12)
+      expect(scoreWriteBackId(0)).assertEqual(0)
+      expect(scoreWriteBackId(undefined)).assertEqual(0)
     })
     it('boundsProgressForPartialPacketsAndInvalidTotals', 0, () => {
       expect(transcriptionPercent(640, 1000)).assertEqual(64)

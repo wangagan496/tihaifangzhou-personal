@@ -1,6 +1,7 @@
 import { describe, expect, it } from '@ohos/hypium'
 import { readableText, speechChunks } from '../main/ets/common/utils/ReadAloudPolicy'
-import { AiScoreInput, AiScoreResult, scoreInputError, validScoreResult, validScoringUrl } from '../main/ets/common/utils/AiScorePolicy'
+import { AiScoreInput, AiScoreResult, scoreInputError, validScoreResult, validScoringUrl,
+  feedbackEndpoint, feedbackInputError, recordsEndpoint } from '../main/ets/common/utils/AiScorePolicy'
 import { studyCardRoute } from '../main/ets/common/utils/StudyCardPolicy'
 
 export default function studyIntegrationTest() {
@@ -26,6 +27,18 @@ export default function studyIntegrationTest() {
       expect(scoreInputError(input).length > 0).assertTrue()
       input.answer = '回答'; input.question = ''
       expect(scoreInputError(input).length > 0).assertTrue()
+    })
+    it('derivesFeedbackEndpointOnlyFromTrustedScoringUrls', 0, () => {
+      expect(feedbackEndpoint('https://scores.example.com/v1/scores')).assertEqual('https://scores.example.com/v1/feedback')
+      expect(recordsEndpoint('https://scores.example.com/v1/scores')).assertEqual('https://scores.example.com/v1/records')
+      expect(recordsEndpoint('http://127.0.0.1:3000/v1/scores', true)).assertEqual('http://127.0.0.1:3000/v1/records')
+      expect(recordsEndpoint('http://127.0.0.1:3000/v1/scores')).assertEqual('')
+      expect(feedbackEndpoint('http://127.0.0.1:3000/v1/scores', true)).assertEqual('http://127.0.0.1:3000/v1/feedback')
+      expect(feedbackEndpoint('http://127.0.0.1:3000/v1/scores')).assertEqual('')
+      expect(feedbackEndpoint('https://scores.example.com/v1/other')).assertEqual('')
+      expect(feedbackInputError('  ')).assertEqual('请先填写反馈内容')
+      expect(feedbackInputError('字'.repeat(4001)).includes('4000')).assertTrue()
+      expect(feedbackInputError('页面返回后列表没刷新')).assertEqual('')
     })
     it('restrictsScoringToHttpsOrExplicitLoopbackDebugEndpoints', 0, () => {
       expect(validScoringUrl('')).assertFalse()

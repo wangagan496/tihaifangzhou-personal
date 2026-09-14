@@ -13,6 +13,17 @@
   },
   "buildOptionSet": [
     {
+      "name": "debug",
+      "arkOptions": {
+        "buildProfileFields": {
+          "DEMO_USERNAME": "",
+          "DEMO_PASSWORD": "",
+          "AI_SCORING_URL": "http://127.0.0.1:3000/v1/scores",
+          "AI_SCORING_ALLOW_LOCAL": true
+        }
+      }
+    },
+    {
       "name": "release",
       "arkOptions": {
         "obfuscation": {
@@ -22,9 +33,15 @@
               "./obfuscation-rules.txt"
             ]
           }
+        },
+        "buildProfileFields": {
+          "DEMO_USERNAME": "",
+          "DEMO_PASSWORD": "",
+          "AI_SCORING_URL": "",
+          "AI_SCORING_ALLOW_LOCAL": false
         }
       }
-    },
+    }
   ],
   "targets": [
     {

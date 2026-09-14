@@ -3,6 +3,7 @@ import {
   MessageSettings,
   messageSettingsStore
 } from '../common/utils/MessageSettingsStore'
+import { messageReminderService } from '../common/utils/MessageReminderService'
 import { common } from '@kit.AbilityKit'
 import { notificationManager } from '@kit.NotificationKit'
 
@@ -16,6 +17,7 @@ struct MessageSettingsPage {
   aboutToAppear(): void {
     this.settings = messageSettingsStore.load()
     this.refreshNotificationState()
+    messageReminderService.apply(this.settings).then((): void => {}, (): void => {})
   }
 
   private async refreshNotificationState(): Promise<void> {
@@ -49,7 +51,25 @@ struct MessageSettingsPage {
     }
     this.settings = next
     if (!messageSettingsStore.save(key, enabled)) {
+      this.settings = messageSettingsStore.load()
       this.showToast('设置保存失败，请稍后重试')
+      return
+    }
+    if (key === 'featureUpdates') {
+      return
+    }
+    this.syncReminders(key === 'reviewReminder' || key === 'studyProgress' ? enabled : false)
+      .then((): void => {}, (): void => {})
+  }
+
+  private async syncReminders(requestPermission: boolean): Promise<void> {
+    if (requestPermission && !this.notificationEnabled) {
+      await this.requestNotificationPermission()
+    }
+    const ok = await messageReminderService.apply(this.settings)
+    await this.refreshNotificationState()
+    if (!ok && (this.settings.reviewReminder || this.settings.studyProgress)) {
+      this.showToast('设置已保存，提醒未生效，请先开启系统通知权限')
     }
   }
 
@@ -58,39 +78,22 @@ struct MessageSettingsPage {
       const context = this.getUIContext().getHostContext() as common.UIAbilityContext
       await notificationManager.requestEnableNotification(context)
       await this.refreshNotificationState()
+      if (this.notificationEnabled) {
+        await messageReminderService.apply(this.settings)
+      }
     } catch (_) {
       this.showToast('未能开启系统通知权限')
     }
   }
 
   private async sendTestNotification(): Promise<void> {
-    try {
-      if (!await notificationManager.isNotificationEnabled()) {
-        const context = this.getUIContext().getHostContext() as common.UIAbilityContext
-        await notificationManager.requestEnableNotification(context)
-      }
-      try {
-        await notificationManager.addSlot(notificationManager.SlotType.SOCIAL_COMMUNICATION)
-      } catch (_) {
-        // The notification slot may already exist; publishing can continue.
-      }
-      const request: notificationManager.NotificationRequest = {
-        id: 260816,
-        content: {
-          notificationContentType: notificationManager.ContentType.NOTIFICATION_CONTENT_BASIC_TEXT,
-          normal: {
-            title: '题海方舟',
-            text: '通知设置已生效，继续保持今天的学习节奏。'
-          }
-        },
-        tapDismissed: true
-      }
-      await notificationManager.publish(request)
-      await this.refreshNotificationState()
-      this.showToast('测试通知已发送')
-    } catch (_) {
-      this.showToast('测试通知发送失败')
+    const context = this.getUIContext().getHostContext() as common.UIAbilityContext
+    const ok = await messageReminderService.publishTest(this.settings, context)
+    await this.refreshNotificationState()
+    if (ok) {
+      await messageReminderService.apply(this.settings)
     }
+    this.showToast(ok ? '测试通知已发送' : '测试通知发送失败')
   }
 
   private showToast(message: string): void {
@@ -141,7 +144,7 @@ struct MessageSettingsPage {
             .padding({ left: 16, right: 16 })
             .onClick(() => {
               if (!this.notificationEnabled) {
-                this.requestNotificationPermission()
+                this.requestNotificationPermission().then((): void => {}, (): void => {})
               }
             })
           }

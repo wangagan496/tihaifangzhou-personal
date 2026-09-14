@@ -4,6 +4,8 @@ import { window } from '@kit.ArkUI';
 import { DEMO_PASSWORD, DEMO_USERNAME } from 'BuildProfile';
 import { theme } from '../common/utils/Theme';
 import { appDiagnostics } from '../common/utils/AppDiagnostics';
+import { contextManager } from '../common/utils/ContextManager';
+import { messageReminderService } from '../common/utils/MessageReminderService';
 import { studyCardRoute } from '../common/utils/StudyCardPolicy';
 import { readAloud } from '../common/utils/ReadAloud';
 import { openPendingStudyCard } from '../common/utils/StudyCardNavigation';
@@ -17,6 +19,7 @@ export default class EntryAbility extends UIAbility {
   // 启动链路的第一步：保存 Context，供 Preferences、RDB 等非组件工具使用。
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
     AppStorage.setOrCreate('context', this.context)
+    contextManager.ctx = this.context
     AppStorage.setOrCreate('SYSTEM_COLOR_MODE', this.context.config.colorMode)
     AppStorage.setOrCreate(DEMO_USERNAME_PARAM, DEMO_USERNAME)
     AppStorage.setOrCreate(DEMO_PASSWORD_PARAM, DEMO_PASSWORD)
@@ -24,6 +27,7 @@ export default class EntryAbility extends UIAbility {
     this.receiveCardAction(want)
     hilog.info(DOMAIN, 'EntryAbility', 'Ability onCreate');
     appDiagnostics.start(this.context)
+    messageReminderService.syncFromStore().then((): void => {}, (): void => {})
   }
 
   onNewWant(want: Want, launchParam: AbilityConstant.LaunchParam): void {

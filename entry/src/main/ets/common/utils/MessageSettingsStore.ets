@@ -1,5 +1,6 @@
 import { preferences } from '@kit.ArkData'
 import { contextManager } from './ContextManager'
+import { storedReminderIds } from './MessageReminderPolicy'
 
 export interface MessageSettings {
   studyProgress: boolean
@@ -44,6 +45,34 @@ class MessageSettingsStore {
     try {
       const file = preferences.getPreferencesSync(context, { name: 'messageSettings' })
       file.putSync(key, enabled)
+      file.flushSync()
+      return true
+    } catch (_) {
+      return false
+    }
+  }
+
+  loadReminderIds(): number[] {
+    const context = contextManager.getCtx()
+    if (!context) {
+      return []
+    }
+    try {
+      const file = preferences.getPreferencesSync(context, { name: 'messageSettings' })
+      return storedReminderIds(file.getSync('reminderIds', []) as number[])
+    } catch (_) {
+      return []
+    }
+  }
+
+  saveReminderIds(ids: number[]): boolean {
+    const context = contextManager.getCtx()
+    if (!context) {
+      return false
+    }
+    try {
+      const file = preferences.getPreferencesSync(context, { name: 'messageSettings' })
+      file.putSync('reminderIds', storedReminderIds(ids))
       file.flushSync()
       return true
     } catch (_) {

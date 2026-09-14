@@ -175,3 +175,30 @@ test('business errors use a bounded public message', async t => {
   t.after(() => app.close());
   assert.equal((await app.inject({ method: 'POST', url: '/v1/scores', headers, payload: input })).json().message, '模型暂不可用');
 });
+
+test('feedback is stored without calling the scoring model', async t => {
+  const saved: string[] = [];
+  const app = await buildApp(config(), { score: async () => { throw new Error('must not score'); } }, {
+    append: async content => {
+      saved.push(content);
+      return { id: 'feedback-1', content, createdAt: '2026-09-14T00:00:00.000Z' };
+    }
+  });
+  t.after(() => app.close());
+  assert.equal((await app.inject({ method: 'POST', url: '/v1/feedback', headers, payload: { content: ' 列表返回后没刷新 ' } })).statusCode, 200);
+  assert.deepEqual(saved, ['列表返回后没刷新']);
+  assert.equal((await app.inject({ method: 'POST', url: '/v1/feedback', headers: { ...headers, origin: 'https://untrusted.example' }, payload: { content: 'x' } })).statusCode, 403);
+  assert.equal((await app.inject({ method: 'POST', url: '/v1/feedback', payload: { content: 'x' } })).statusCode, 401);
+  assert.equal((await app.inject({ method: 'POST', url: '/v1/feedback', headers, payload: { content: ' ' } })).statusCode, 400);
+});
+
+test('feedback still works when the scoring model is not configured', async t => {
+  const app = await buildApp(loadConfig({ API_ACCESS_TOKEN: token }), { score: async () => score }, {
+    append: async content => ({ id: 'local-1', content, createdAt: '2026-09-14T00:00:00.000Z' })
+  });
+  t.after(() => app.close());
+  const response = await app.inject({ method: 'POST', url: '/v1/feedback', headers, payload: { content: '按钮被挡住了' } });
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.json().success, true);
+  assert.equal(response.json().data.id, 'local-1');
+});

@@ -10,6 +10,22 @@
           "when": "inuse"
         },
         "reason": "$string:reason_record"
+      },
+      {
+        "name": "ohos.permission.PUBLISH_AGENT_REMINDER",
+        "usedScene": {
+          "abilities": ["EntryAbility"],
+          "when": "always"
+        },
+        "reason": "$string:reason_reminder"
+      },
+      {
+        "name": "ohos.permission.VIBRATE",
+        "usedScene": {
+          "abilities": ["EntryAbility"],
+          "when": "inuse"
+        },
+        "reason": "$string:reason_vibrate"
       }
     ],
     "name": "entry",

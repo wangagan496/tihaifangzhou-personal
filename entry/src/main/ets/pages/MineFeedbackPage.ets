@@ -1,22 +1,56 @@
-import { mineFeedbackStore } from '../common/utils/MineFeedbackStore'
+import { AI_SCORING_URL, AI_SCORING_ALLOW_LOCAL } from 'BuildProfile'
+import { auth } from '../common/utils/Auth'
+import { feedbackEndpoint, feedbackInputError } from '../common/utils/AiScorePolicy'
+import { FeedbackJob } from '../common/utils/FeedbackSubmit'
+import { mineFeedbackStore, StoredFeedback } from '../common/utils/MineFeedbackStore'
+import { scoreCredentialStore } from '../common/utils/ScoreCredentialStore'
 
 @Entry
 @Component
 struct MineFeedbackPage {
   @State feedback: string = ''
+  @State history: StoredFeedback[] = []
+  @State busy: boolean = false
   @StorageProp('topHeight') topHeight: number = 0
 
-  private submit(): void {
+  aboutToAppear(): void {
+    this.history = mineFeedbackStore.list()
+  }
+
+  private async submit(): Promise<void> {
+    if (this.busy) { return }
+    const error = feedbackInputError(this.feedback)
+    if (error) { this.showToast(error); return }
     const content = this.feedback.trim()
-    if (!content) {
-      this.showToast('请先填写反馈内容')
-      return
-    }
-    if (mineFeedbackStore.save(content)) {
+    this.busy = true
+    let delivered = false
+    try {
+      const url = feedbackEndpoint(AI_SCORING_URL, AI_SCORING_ALLOW_LOCAL)
+      const owner = auth.getUser()?.id || ''
+      if (url && owner) {
+        const credential = await scoreCredentialStore.read(owner, AI_SCORING_URL)
+        if (credential.state === 'ready') {
+          await new FeedbackJob(AI_SCORING_URL, AI_SCORING_ALLOW_LOCAL).run(content, credential.accessCode)
+          delivered = true
+        }
+      }
+      if (!mineFeedbackStore.save(content, delivered)) {
+        this.showToast(delivered ? '已送达，但本机记录保存失败' : '反馈保存失败，请稍后重试')
+        return
+      }
       this.feedback = ''
-      this.showToast('反馈已保存，感谢你的建议')
-    } else {
-      this.showToast('反馈保存失败，请稍后重试')
+      this.history = mineFeedbackStore.list()
+      this.showToast(delivered ? '反馈已送达开发者服务' : '已保存到本机。配置评分服务后可再次提交送达')
+    } catch (_) {
+      if (mineFeedbackStore.save(content, false)) {
+        this.feedback = ''
+        this.history = mineFeedbackStore.list()
+        this.showToast('未能送达服务，已先保存在本机')
+      } else {
+        this.showToast('反馈提交失败，请稍后重试')
+      }
+    } finally {
+      this.busy = false
     }
   }
 
@@ -26,6 +60,10 @@ struct MineFeedbackPage {
     } catch (_) {
       return
     }
+  }
+
+  private historyLine(item: StoredFeedback): string {
+    return `${item.delivered ? '已送达' : '仅本机'} · ${item.content}`
   }
 
   build() {
@@ -38,10 +76,28 @@ struct MineFeedbackPage {
           .backgroundColor(Color.White)
           .borderRadius(8)
           .padding(14)
-        Button('提交反馈')
+          .enabled(!this.busy)
+        Button(this.busy ? '正在提交…' : '提交反馈')
           .width('100%')
           .height(44)
+          .id('submitFeedback')
+          .enabled(!this.busy)
           .onClick(() => this.submit())
+        if (this.history.length > 0) {
+          Text('最近提交').fontSize(14).fontColor('#8A94A3')
+          Scroll() {
+            Column({ space: 8 }) {
+              ForEach(this.history, (item: StoredFeedback) => {
+                Text(this.historyLine(item))
+                  .fontSize(13)
+                  .fontColor('#4C596A')
+                  .maxLines(3)
+                  .textOverflow({ overflow: TextOverflow.Ellipsis })
+                  .width('100%')
+              }, (item: StoredFeedback) => `${item.time}`)
+            }.width('100%').alignItems(HorizontalAlign.Start)
+          }.layoutWeight(1)
+        }
       }
       .padding(16)
       .layoutWeight(1)

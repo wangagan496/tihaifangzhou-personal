@@ -21,6 +21,10 @@ struct MineQuestionsPage {
     this.loadData()
   }
 
+  onPageShow(): void {
+    this.loadData()
+  }
+
   private loadData(): void {
     const userId = auth.getUser()?.id
     this.list = userId ? mineQuestionStore.list(this.mode, userId) : []

@@ -55,6 +55,14 @@
       "value": "题海方舟需要访问麦克风才能帮您录音"
     },
     {
+      "name": "reason_reminder",
+      "value": "用于在设定时间发送复习和学习进度提醒"
+    },
+    {
+      "name": "reason_vibrate",
+      "value": "用于在通知到达时振动提醒"
+    },
+    {
       "name": "reason_save_image",
       "value": "用于将题目分享图片保存到图库"
     }

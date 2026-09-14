@@ -86,6 +86,8 @@ node -e "process.stdout.write(require('node:crypto').randomBytes(32).toString('h
 - `GET /healthz`：进程健康、配置是否齐全。
 - `GET /readyz`：配置齐全为 200，否则 503；不探测真实模型连通性/额度。
 - `POST /v1/scores`：`Authorization: Bearer <独立服务访问码>`。
+- `POST /v1/feedback`：同一访问码；不调用模型。JSON `{ "content": "..." }`，最多 4000 字。写入 `data/feedback.jsonl`。
+- `GET|PUT|DELETE /v1/records/:kind`：`kind` 为 `history`|`collect`|`like`。同一访问码，另需请求头 `X-Owner-Id`（课堂用户 id）。写入 `data/records.json`。不调用模型。
 
 ```json
 {

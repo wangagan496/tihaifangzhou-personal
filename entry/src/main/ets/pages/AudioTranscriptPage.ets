@@ -3,7 +3,8 @@ import { ILoginDta } from '../models/AccountModel'
 import { auth } from '../common/utils/Auth'
 import { audioDB, InterviewAudioItem } from '../common/utils/AudioDB'
 import { AudioTranscriptionJob, TranscriptionProgress } from '../common/utils/AudioTranscription'
-import { MAX_TRANSCRIPTION_MS, transcriptionErrorMessage } from '../common/utils/TranscriptionPolicy'
+import { MAX_TRANSCRIPTION_MS, canSaveTranscript, transcriptionErrorMessage,
+  transcriptDraftChanged } from '../common/utils/TranscriptionPolicy'
 import { ReadAloudControl } from '../common/components/ReadAloudControl'
 import { readAloud } from '../common/utils/ReadAloud'
 
@@ -18,6 +19,7 @@ struct AudioTranscriptPage {
   @State item: InterviewAudioItem | undefined = undefined
   @State phase: Phase = 'loading'
   @State savedText: string = ''
+  @State draft: string = ''
   @State preview: string = ''
   @State unsaved: string = ''
   @State message: string = ''
@@ -35,13 +37,13 @@ struct AudioTranscriptPage {
   aboutToDisappear(): void { this.active = false; this.cancel(false) }
   onPageHide(): void { this.cancel(true) }
   onPageShow(): void {
-    if (this.active && this.needsReload) { this.needsReload = false; this.load() }
+    if (this.active && this.needsReload && !this.busy()) { this.needsReload = false; this.load() }
   }
 
   private onAccountChanged(): void {
     if (!this.active || this.ownerId === (auth.getUser()?.id || '')) { return }
     this.cancel(false)
-    this.savedText = ''; this.preview = ''; this.unsaved = ''; this.item = undefined
+    this.savedText = ''; this.draft = ''; this.preview = ''; this.unsaved = ''; this.item = undefined
     this.load()
   }
 
@@ -69,6 +71,7 @@ struct AudioTranscriptPage {
       if (!this.isCurrent(generation)) { return }
       this.item = item
       this.savedText = text
+      this.draft = text
       this.phase = text ? 'done' : 'ready'
       if (!item) { this.message = '录音不存在或已删除'; this.phase = 'error' }
       else if (item.duration > MAX_TRANSCRIPTION_MS) { this.message = transcriptionErrorMessage('AUDIO_TOO_LONG') }
@@ -143,6 +146,37 @@ struct AudioTranscriptPage {
     }
   }
 
+  private currentText(): string {
+    return this.unsaved || this.draft || this.savedText
+  }
+
+  private async saveDraft(): Promise<void> {
+    const item = this.item
+    const text = this.draft.trim()
+    if (!item || item.id === null || this.busy() || !canSaveTranscript(item.id, this.ownerId, text)) { return }
+    const generation = this.generation
+    this.phase = 'saving'
+    const saved = await audioDB.saveTranscript(item.id, this.ownerId, text)
+    if (!this.isCurrent(generation)) { return }
+    if (saved) {
+      this.savedText = text; this.draft = text; this.phase = 'done'; this.message = '修订已写回本机文字稿'
+    } else {
+      this.phase = 'done'; this.message = '文字稿保存未确认，请重试'
+    }
+  }
+
+  private openScore(): void {
+    const item = this.item
+    this.needsReload = true
+    auth.checkAuth({
+      url: 'pages/AiScorePage',
+      params: {
+        answer: this.currentText(),
+        audioId: item && item.id !== null ? item.id : 0
+      }
+    })
+  }
+
   private async saveResult(generation: number): Promise<void> {
     const item = this.item
     if (!item || item.id === null || !this.unsaved || !this.isCurrent(generation) || this.phase === 'saving') { return }
@@ -152,7 +186,7 @@ struct AudioTranscriptPage {
     if (!this.isCurrent(generation)) { return }
     this.preview = ''
     if (saved) {
-      this.savedText = result; this.unsaved = ''; this.phase = 'done'; this.message = '文字稿已保存到本机'
+      this.savedText = result; this.draft = result; this.unsaved = ''; this.phase = 'done'; this.message = '文字稿已保存到本机'
     } else {
       this.phase = 'error'; this.message = '文字稿保存未确认，可重试保存'
     }
@@ -194,21 +228,23 @@ struct AudioTranscriptPage {
                 Text(this.unsaved ? '待保存文字' : this.preview ? '识别中的文字（尚未保存）' :
                 this.busy() && this.savedText ? '上次已保存的文字稿' : '文字稿')
                 .fontSize(16).fontWeight(FontWeight.Medium).fontColor($r('app.color.black'))
-                if (this.preview || this.unsaved || this.savedText) {
+                if (!this.busy() && !this.unsaved && !this.preview && this.savedText) {
+                  TextArea({ text: this.draft, placeholder: '修订转写结果后保存，不会改动原录音' })
+                    .height(220).width('100%').fontSize(16).id('transcriptEditor')
+                    .onChange((value: string) => { this.draft = value })
+                } else if (this.preview || this.unsaved || this.savedText) {
                   Text(this.unsaved || this.preview || this.savedText).fontSize(16).lineHeight(27)
                   .fontColor($r('app.color.black')).copyOption(CopyOptions.LocalDevice).width('100%')
                   .id('transcriptText')
                 } else {
-                  Text('转写完成后可在这里查看、长按复制文字。识别结果仅供复盘，请对照原录音核对。')
+                  Text('转写完成后可在这里查看、修订并保存文字。识别结果仅供复盘，请对照原录音核对。')
                   .fontSize(16).lineHeight(27).fontColor($r('app.color.common_gray_03'))
                 }
               }.width('100%').alignItems(HorizontalAlign.Start)
               if (!this.busy() && (this.unsaved || this.savedText)) {
-                ReadAloudControl({ text: this.unsaved || this.savedText })
+                ReadAloudControl({ text: this.currentText() })
                 Button('核对文字并 AI 评分').width('100%').height(44).id('transcriptAiScore')
-                  .onClick(() => auth.checkAuth({ url: 'pages/AiScorePage', params: {
-                    answer: this.unsaved || this.savedText
-                  } }))
+                  .onClick(() => this.openScore())
               }
             }.width('100%').alignItems(HorizontalAlign.Start)
           }.layoutWeight(1).width('100%').align(Alignment.TopStart)
@@ -219,6 +255,10 @@ struct AudioTranscriptPage {
               Button(this.phase === 'saving' ? '正在保存…' : '重试保存').width('100%').height(48).enabled(!this.busy())
               .onClick(() => this.saveResult(this.generation)).id('saveTranscript')
             } else {
+              if (transcriptDraftChanged(this.savedText, this.draft)) {
+                Button(this.phase === 'saving' ? '正在保存…' : '保存修订').width('100%').height(48)
+                  .enabled(!this.busy()).onClick(() => this.saveDraft()).id('saveTranscriptRevision')
+              }
               Button(this.savedText ? '重新转写' : '开始转写').width('100%').height(48)
               .enabled(!this.busy() && this.item.duration <= MAX_TRANSCRIPTION_MS)
               .onClick(() => this.start()).id('startTranscription')
