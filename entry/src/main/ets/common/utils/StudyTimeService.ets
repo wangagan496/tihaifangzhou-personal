@@ -24,7 +24,7 @@ export interface StudyTimeData {
 /**
  * 获取学习数据。
  * - totalTime：从本地 studyTimeStore 实时计算，服务端该字段为固定值故不采用。
- * - studyData：从服务端获取分类和总题数，完成数改由本机阅读记录聚合。
+ * - studyData：从服务端获取分类和总题数，完成数仅统计本机主动标记完成的普通题。
  */
 export async function getStudyData(): Promise<StudyTimeData> {
   const user = auth.getUser()

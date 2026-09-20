@@ -12,6 +12,7 @@ import transcriptionPolicyTest from './TranscriptionPolicy.test'
 import studyIntegrationTest from './StudyIntegration.test'
 import scoreSettingsPolicyTest from './ScoreSettingsPolicy.test'
 import messageReminderPolicyTest from './MessageReminderPolicy.test'
+import studyProgressStoreTest from './StudyProgressStore.test'
 
 export default function testsuite() {
   trackingTest()
@@ -28,4 +29,5 @@ export default function testsuite() {
   studyIntegrationTest()
   scoreSettingsPolicyTest()
   messageReminderPolicyTest()
+  studyProgressStoreTest()
 }

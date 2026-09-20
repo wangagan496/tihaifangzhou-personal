@@ -66,9 +66,12 @@ struct StudyTimePage {
             Text(this.totalTime < 3600 ? '分钟' : '小时').margin({ bottom: (8), left: (8) })
           }.width('100%').alignItems(VerticalAlign.Bottom).margin({ bottom: (20) })
 
+          Text('完成进度按手动标记的题目统计，浏览记录不计入完成数。')
+            .fontSize(13).fontColor('#596579').width('100%').margin({ bottom: 16 })
+
           if (this.knowledge.length > 0) {
             Column() {
-              Text('知识点学习进度').margin({ bottom: (10) })
+              Text('知识点完成进度').margin({ bottom: (10) })
               GridRow({ columns: 2, gutter: 20 }) {
                 ForEach(this.knowledge, (item: StudyTimeItem) => {
                   GridCol() {
@@ -92,14 +95,14 @@ struct StudyTimePage {
                       .borderRadius((4))
                       .backgroundColor('#87E0CD')
                       .margin({ right: (4) })
-                    Text('已学占比').fontSize((12)).margin({ right: (20) })
+                    Text('已完成占比').fontSize((12)).margin({ right: (20) })
                     Text()
                       .width((7))
                       .height((7))
                       .borderRadius((4))
                       .backgroundColor('#c3c4c5')
                       .margin({ right: (4) })
-                    Text('未学占比').fontSize((12))
+                    Text('未完成占比').fontSize((12))
                   }.justifyContent(FlexAlign.Center)
                 }
               }.backgroundColor('#fff').borderRadius((4)).padding((15))
@@ -121,7 +124,7 @@ struct StudyTimePage {
 
 
           Column() {
-            Text('项目常问学习进度').margin({ bottom: (10) })
+            Text('项目常问完成进度').margin({ bottom: (10) })
             if (this.project.length > 0) {
               GridRow({ columns: 1 }) {
                 ForEach(this.project, (item: StudyTimeItem) => {
@@ -146,14 +149,14 @@ struct StudyTimePage {
                       .borderRadius((4))
                       .backgroundColor('#c7b5ed')
                       .margin({ right: (4) })
-                    Text('已学占比').fontSize((12)).margin({ right: (20) })
+                    Text('已完成占比').fontSize((12)).margin({ right: (20) })
                     Text()
                       .width((7))
                       .height((7))
                       .borderRadius((4))
                       .backgroundColor('#c3c4c5')
                       .margin({ right: (4) })
-                    Text('未学占比').fontSize((12))
+                    Text('未完成占比').fontSize((12))
                   }.justifyContent(FlexAlign.Center)
                 }
               }.backgroundColor('#fff').borderRadius((4)).padding((15))

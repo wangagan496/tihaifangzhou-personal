@@ -14,6 +14,7 @@ import { QuestionDetail } from '../models/QuestionDetailModel'
 import { ReadAloudControl } from '../common/components/ReadAloudControl'
 import { readAloud } from '../common/utils/ReadAloud'
 import { readableText } from '../common/utils/ReadAloudPolicy'
+import { ILoginDta } from '../models/AccountModel'
 
 export interface IBodyData {
   /**
@@ -67,6 +68,9 @@ struct QuestionDetailPage {
   isLoading: boolean = true
   @State
   interviewReadComplete: boolean = false
+  @State questionCompleted: boolean = false
+  @State completionReady: boolean = false
+  @StorageProp('user') @Watch('refreshCompletion') completionUser: ILoginDta = {} as ILoginDta
   private interviewStartAt: number = 0
   private questionTrackingStarted: boolean = false
   private requestSequence: number = 0
@@ -107,6 +111,44 @@ struct QuestionDetailPage {
 
   onPageHide(): void { readAloud.stop() }
 
+  onPageShow(): void { this.refreshCompletion() }
+
+  private refreshCompletion(): void {
+    this.questionCompleted = false
+    this.completionReady = false
+    if (this.isLoading || this.contentType !== 0 || !this.question.id) { return }
+    const completed = studyProgressStore.isCompleted(auth.getUser()?.id, this.questionId)
+    if (completed !== undefined) {
+      this.questionCompleted = completed
+      this.completionReady = true
+    }
+  }
+
+  private toggleCompletion(): void {
+    if (this.isLoading || this.contentType !== 0 || !this.question.id) { return }
+    const user = auth.getUser()
+    if (!user?.id || !user.token) { this.showToast('请先登录后再标记'); return }
+    if (!this.completionReady) {
+      this.refreshCompletion()
+      if (!this.completionReady) { this.showToast('完成状态读取失败，请重试') }
+      return
+    }
+    // A history/favorites route may omit category information. Completion can still
+    // be saved by question id; known category membership is retained independently.
+    if (this.routeQuestionTypeId > 0 && !studyProgressStore.rememberQuestion(user.id,
+      this.routeQuestionTypeId, this.routeQuestionBankType, this.questionId)) {
+      this.showToast('完成状态保存失败，请重试')
+      return
+    }
+    const completed = !this.questionCompleted
+    if (!studyProgressStore.setCompleted(user.id, this.questionId, completed)) {
+      this.showToast('完成状态保存失败，请重试')
+      return
+    }
+    this.questionCompleted = completed
+    this.showToast(completed ? '已标记完成' : '已取消完成')
+  }
+
   private showToast(message: string): void {
     try {
       this.getUIContext().getPromptAction().showToast({ message })
@@ -124,6 +166,8 @@ struct QuestionDetailPage {
     const requestSequence = ++this.requestSequence
     this.questionId = id
     this.interviewReadComplete = false
+    this.questionCompleted = false
+    this.completionReady = false
     this.isLoading = true
     this.closeLoading(this.loadingController)
     const loadingController = new CustomDialogController({
@@ -147,8 +191,11 @@ struct QuestionDetailPage {
       const userId = auth.getUser()?.id
       if (userId) {
         mineQuestionStore.recordHistory(userId, this.toMineQuestionRecord())
-        studyProgressStore.record(userId, this.routeQuestionTypeId, this.routeQuestionBankType, id)
+        if (this.contentType === 0) {
+          studyProgressStore.rememberQuestion(userId, this.routeQuestionTypeId, this.routeQuestionBankType, id)
+        }
       }
+      this.refreshCompletion()
       if (this.contentType === 1) {
         this.interviewStartAt = Date.now()
         this.questionTrackingStarted = false
@@ -457,6 +504,17 @@ struct QuestionDetailPage {
                       </body>
                       </html>
                       `)
+                if (this.contentType === 0 && this.question.id) {
+                  Text('完成状态由你主动标记，浏览不会自动计入。')
+                    .fontSize(13).fontColor($r('app.color.common_gray_03'))
+                  Button(this.completionReady
+                    ? (this.questionCompleted ? '已完成 · 取消标记' : '标记已完成') : '重试读取完成状态')
+                    .id('questionCompletionButton')
+                    .width('100%').height(44)
+                    .accessibilityText(this.completionReady
+                      ? (this.questionCompleted ? '已完成，点击取消完成' : '标记已完成') : '重试读取完成状态')
+                    .onClick(() => this.toggleCompletion())
+                }
               }.width('100%').alignItems(HorizontalAlign.Start)
 
             }
