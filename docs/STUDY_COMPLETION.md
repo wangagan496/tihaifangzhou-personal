@@ -58,3 +58,31 @@
 执行 `tools/verify-feature.ps1 -BuildMode debug`：13 项工具测试通过，125 个源码/测试文件与 20 个路由页面检查通过，Debug HAP 构建及签名成功，应用测试结果为 `Tests run: 75, Failure: 0, Error: 0, Pass: 75, Ignore: 0`。构建仍有 API 异常处理、权限等警告，不能表述为零警告。
 
 本次复验日志位于 `branch-verification/full/debug-build.log`、`test.log` 和 `test_result.txt`。`hdc list targets` 返回空列表，因此本次未做设备按钮点击、重启恢复、Release 或云端同步验收。
+
+## 2026-09-21 模拟器验收补充
+
+已在 API 24 模拟器 `127.0.0.1:15556` 上安装个人版应用和 ohosTest 包，执行 `StudyCompletionRunner` 的 `save`、`read` 两阶段。两阶段之间执行 `aa force-stop com.mine.myapplication`，没有卸载或清空应用数据。两阶段最终结果均为 `TestFinished-ResultCode: 0`。
+
+- 浏览详情不增加完成数，旧阅读记录不自动转换为完成记录。
+- 实际点击按钮可以标记完成；同一题重复设置完成只统计一次。
+- 强制结束进程后重新启动，Preferences 中的完成记录和按钮状态均恢复。
+- 实际点击取消后，完成数回到 0，按钮恢复为“标记已完成”。
+- 切换合成测试账号后不会显示前一个账号的完成状态；切回原测试账号恢复。
+- 不带分类参数重新进入详情页，仍能读取已有完成状态。
+- 检查了竖屏和横屏的标记按钮截图，按钮可见可操作；未覆盖折叠屏、大字体和完整读屏。
+
+测试使用独立合成账号和题目响应，运行真实详情页面和原生 Preferences，未调用真实登录接口或向教学后端提交测试记录。运行前保存用户状态和阅读队列，结束后恢复，并清理该测试范围内的数据。初次调试的夹具结构、驱动初始化和截图路径问题已修正，不计入通过结果。
+
+### 重跑方式
+
+分别构建 `entry@default` 主应用和 `entry@ohosTest` 测试模块的 Debug HAP，确认两个安装包都已安装后，依次执行：
+
+```text
+hdc -t <device> shell aa test -b com.mine.myapplication -m entry_test -s unittest StudyCompletionRunner -s stage save -s timeout 90000
+hdc -t <device> shell aa force-stop com.mine.myapplication
+hdc -t <device> shell aa test -b com.mine.myapplication -m entry_test -s unittest StudyCompletionRunner -s stage read -s timeout 90000
+```
+
+`CompletionUiDriver.ets` 延迟加载 UiTest 驱动，避免在 AbilityDelegator 就绪前初始化。测试源码保留在 `entry/src/ohosTest/ets/testrunner/`，不属于可清理的临时文件。
+
+本次验证后的构建产物、截图和日志与旧缓存一并移出项目，恢复目录及清单记录在 `D:/Backup/tihaifangzhou-personal-cleanup-20260921/`。依赖、后端数据、签名配置、源码和文档保留。设备验证补齐了上节的按钮与重启恢复缺口，但不代表真实后端联调、断电恢复或全部存储失败路径已通过。

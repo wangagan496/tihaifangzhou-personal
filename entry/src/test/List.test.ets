@@ -13,6 +13,7 @@ import studyIntegrationTest from './StudyIntegration.test'
 import scoreSettingsPolicyTest from './ScoreSettingsPolicy.test'
 import messageReminderPolicyTest from './MessageReminderPolicy.test'
 import studyProgressStoreTest from './StudyProgressStore.test'
+import categoryPolicyTest from './CategoryPolicy.test'
 
 export default function testsuite() {
   trackingTest()
@@ -30,4 +31,5 @@ export default function testsuite() {
   scoreSettingsPolicyTest()
   messageReminderPolicyTest()
   studyProgressStoreTest()
+  categoryPolicyTest()
 }

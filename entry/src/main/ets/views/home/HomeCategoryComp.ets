@@ -3,6 +3,7 @@ import { tgRequest } from '../../common/utils/request'
 import { IQuestionType } from '../../models/CategoryModel'
 import { FilterParams, QuestionFilterComp } from './QuestionFilterComp'
 import { QuestionListComp } from './QuestionListComp'
+import { parseQuestionCategories } from '../../common/utils/CategoryPolicy'
 
 @Component
 export struct HomeCategoryComp {
@@ -13,22 +14,32 @@ export struct HomeCategoryComp {
     index: 0
   }
   @State isLoading: boolean = false
+  @State loadFailed: boolean = false
+  private requestSequence: number = 0
   @StorageProp('isDark') isDark: boolean = false
 
   aboutToAppear(): void {
     this.getTabBarData()
   }
 
-  getTabBarData(): Promise<void> {
+  aboutToDisappear(): void { this.requestSequence++ }
+
+  async getTabBarData(): Promise<void> {
+    const sequence = ++this.requestSequence
     this.isLoading = true
-    return tgRequest<IQuestionType[]>({ url: '/hm/question/type' }).then((res): void => {
-      this.questionTypeList = res
-      this.isLoading = false
-    }, (): void => {
+    this.loadFailed = false
+    try {
+      const res = await tgRequest<Object>({ url: '/hm/question/type' })
+      if (sequence !== this.requestSequence) { return }
+      this.questionTypeList = parseQuestionCategories(res)
+      this.selectCategory(0, this.params.sort)
+    } catch (_) {
+      if (sequence !== this.requestSequence) { return }
       this.questionTypeList = []
-      this.isLoading = false
-      this.getUIContext().getPromptAction().showToast({ message: '分类加载失败，请稍后重试' })
-    })
+      this.loadFailed = true
+    } finally {
+      if (sequence === this.requestSequence) { this.isLoading = false }
+    }
   }
 
   @Builder
@@ -75,6 +86,17 @@ export struct HomeCategoryComp {
           .margin({ top: 10, bottom: 20 })
         })
       }
+    } else if (this.loadFailed || this.questionTypeList.length === 0) {
+      Column({ space: 12 }) {
+        Text(this.loadFailed ? '分类加载失败，请重试' : '暂无题目分类')
+          .fontSize(15)
+          .fontColor(this.isDark ? Color.White : Color.Black)
+        Button(this.loadFailed ? '重新加载' : '刷新分类')
+          .id('categoryRetryButton')
+          .height(44)
+          .accessibilityText(this.loadFailed ? '重新加载题目分类' : '刷新题目分类')
+          .onClick(() => { this.getTabBarData() })
+      }.width('100%').padding(24)
     } else {
       Stack({ alignContent: Alignment.TopEnd }) { //设置堆叠位置为右上角
         Tabs({ index: this.params.index }) {
@@ -82,7 +104,7 @@ export struct HomeCategoryComp {
             TabContent() {
               QuestionListComp({ typeId: item.id, params: this.params, selfIndex: index })
             }.tabBar(this.TabItemBuilder(item, index))
-          })
+          }, (item: IQuestionType) => String(item.id))
         }
         .height(450)
         .divider({
