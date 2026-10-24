@@ -19,8 +19,8 @@ export default function audioDBTest() {
       const db = new AudioDB()
 
       expect(await db.insert(createAudioItem())).assertEqual(false)
-      expect(await db.update(createAudioItem())).assertEqual(false)
-      expect(await db.delete(1)).assertEqual(false)
+      expect(await db.update(createAudioItem(), 'unit-test-user')).assertEqual(false)
+      expect(await db.delete(1, 'unit-test-user')).assertEqual(false)
       expect(await db.saveTranscript(1, 'unit-test-user', '文字稿')).assertFalse()
     })
 

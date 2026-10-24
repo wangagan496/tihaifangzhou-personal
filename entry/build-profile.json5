@@ -1,6 +1,11 @@
 {
   "apiType": "stageMode",
   "buildOption": {
+    "externalNativeOptions": {
+      "path": "./src/main/cpp/CMakeLists.txt",
+      "targets": ["audiopcm"],
+      "abiFilters": ["x86_64", "arm64-v8a"]
+    },
     "resOptions": {
       "copyCodeResource": {
         "enable": false

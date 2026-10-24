@@ -6,6 +6,7 @@ import { InputDialog } from './InputDialog'
 import { AudioPlayer } from './AudioPlay'
 import { fileIo } from '@kit.CoreFileKit'
 import { AudioRecording } from './AudioRecording'
+import { audioCleanupStore } from '../../common/utils/AudioCleanupStore'
 import dayjs from 'dayjs'
 
 @Component
@@ -27,6 +28,7 @@ export struct AudioView {
   })
 
   aboutToAppear(): void {
+    audioCleanupStore.drain()
     this.loadAudioData()
   }
 
@@ -52,9 +54,10 @@ export struct AudioView {
   private renameAudio(name: string): void {
     const item = this.currentItem
     const trimmedName = name.trim()
-    if (!item || !trimmedName) { return }
+    const userId = auth.getUser()?.id
+    if (!item || !trimmedName || !userId || item.user_id !== userId) { return }
     item.name = trimmedName
-    audioDB.update(item).then((updated) => {
+    audioDB.update(item, userId).then((updated) => {
       if (!updated) { this.showToast('重命名失败，请重试'); return }
       this.getList()
       this.dialog.close()
@@ -64,7 +67,7 @@ export struct AudioView {
   private saveAudio(recording: AudioRecording): void {
     const user = auth.getUser()
     if (!user?.id) {
-      this.removeAudioFile(recording.path)
+      this.cleanupAudioFile(recording.path)
       this.showToast('录音保存失败')
       return
     }
@@ -83,27 +86,34 @@ export struct AudioView {
         this.showToast('录音保存成功')
         return
       }
-      this.removeAudioFile(recording.path)
+      this.cleanupAudioFile(recording.path)
       this.showToast('录音保存失败')
     }, () => {
-      this.removeAudioFile(recording.path)
+      this.cleanupAudioFile(recording.path)
       this.showToast('录音保存失败')
     })
   }
 
-  private removeAudioFile(path: string): void {
+  private removeAudioFile(path: string): boolean {
     try {
+      if (!fileIo.accessSync(path)) { return true }
       fileIo.unlinkSync(path)
+      return true
     } catch (_) {
-      // The file may already have been removed after an incomplete recording.
+      return false
     }
   }
 
+  private cleanupAudioFile(path: string): void {
+    if (!this.removeAudioFile(path)) { audioCleanupStore.enqueue(path) }
+  }
+
   private deleteAudio(item: InterviewAudioItem): void {
-    if (item.id === null) { this.showToast('删除录音失败'); return }
-    audioDB.delete(item.id).then((deleted) => {
+    const userId = auth.getUser()?.id
+    if (!userId || item.user_id !== userId || item.id === null) { this.showToast('删除录音失败'); return }
+    audioDB.delete(item.id, userId).then((deleted) => {
       if (!deleted) { this.showToast('删除录音失败'); return }
-      fileIo.unlinkSync(item.path)
+      if (!this.removeAudioFile(item.path)) { audioCleanupStore.enqueue(item.path) }
       this.getList()
     }, () => this.showToast('删除录音失败'))
   }
