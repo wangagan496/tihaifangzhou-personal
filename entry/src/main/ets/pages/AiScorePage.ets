@@ -113,7 +113,7 @@ struct AiScorePage {
         case 'INVALID_RESPONSE': this.message = '评分返回格式无效，未展示不完整结果'; break
         case 'UNAUTHORIZED': this.connection = 'missing'; this.message = '连接验证未通过，请到设置更新评分服务配置'; break
         case 'RATE_LIMITED': this.message = '评分请求过多，请稍后重试'; break
-        case 'SERVICE_NOT_READY': this.message = '评分后端已连接，但模型服务尚未配置完成'; break
+        case 'SERVICE_NOT_READY': this.message = '评分服务已连接，但模型服务尚未配置完成'; break
         case 'TIMEOUT': this.message = '模型评分超时，请稍后重试'; break
         default: this.message = '评分未完成，请检查网络或服务配置后重试。输入内容已保留'
       }

@@ -8,6 +8,8 @@ import { auth } from '../common/utils/Auth'
 import { mineQuestionStore } from '../common/utils/MineQuestionStore'
 import { MineQuestionRecord } from '../common/utils/MineQuestionPolicy'
 import { studyTimeStore } from '../common/utils/StudyTimeStore'
+import { interviewTrackingStore } from '../common/utils/InterviewTrackingStore'
+import { ANONYMOUS_INTERVIEW_OWNER } from '../common/utils/InterviewTrackingPolicy'
 import { studyProgressStore } from '../common/utils/StudyProgressStore'
 import { resolveInterviewIcon } from '../common/utils/InterviewIcon'
 import { QuestionDetail } from '../models/QuestionDetailModel'
@@ -15,6 +17,9 @@ import { ReadAloudControl } from '../common/components/ReadAloudControl'
 import { readAloud } from '../common/utils/ReadAloud'
 import { readableText } from '../common/utils/ReadAloudPolicy'
 import { ILoginDta } from '../models/AccountModel'
+import { UnderstandingLab } from '../common/components/UnderstandingLab'
+import { UnderstandingAnswerScorer } from '../common/components/UnderstandingAnswerScorer'
+import { understandingExperimentFor, UnderstandingExperimentSpec } from '../common/utils/UnderstandingExperimentCatalog'
 
 export interface IBodyData {
   /**
@@ -80,6 +85,7 @@ struct QuestionDetailPage {
   // 3、退出界面，保存时间点
 
   aboutToAppear(): void {
+    interviewTrackingStore.flush(auth.getUser()?.id || ANONYMOUS_INTERVIEW_OWNER)
     this.loadQuestionFromRoute()
   }
 
@@ -237,15 +243,12 @@ struct QuestionDetailPage {
       if (!questionNo) {
         return
       }
-      tgRequest({
-        url: '/hm/interview/tracking',
-        method: 'POST',
-        data: {
-          questionNo,
-          stayTime,
-          exp: this.interviewReadComplete
-        }
-      }).then((): void => {}, (): void => {})
+      interviewTrackingStore.record({
+        ownerId: user?.id || ANONYMOUS_INTERVIEW_OWNER,
+        questionNo,
+        stayTime,
+        exp: this.interviewReadComplete
+      })
       return
     }
     if (this.questionTrackingStarted) {
@@ -276,6 +279,22 @@ struct QuestionDetailPage {
       return this.question.content || this.routeInterviewContent || '<p>暂无面经正文</p>'
     }
     return this.question.answer || '<p>暂无答案内容</p>'
+  }
+
+  private getUnderstandingExperiment(): UnderstandingExperimentSpec | undefined {
+    if (this.contentType !== 0 || !this.question.id) {
+      return undefined
+    }
+    return understandingExperimentFor(this.question.stem || this.routeStem)
+  }
+
+  private hasUnderstandingExperiment(): boolean {
+    return this.getUnderstandingExperiment() !== undefined
+  }
+
+  @Builder
+  understandingBuilder(spec: UnderstandingExperimentSpec) {
+    UnderstandingLab({ spec: spec })
   }
 
   // 跳转上一题，下一题
@@ -489,8 +508,19 @@ struct QuestionDetailPage {
             Scroll() {
               Column({ space: 16 }) {
                 if (this.question.id) {
+                  if (this.hasUnderstandingExperiment()) {
+                    this.understandingBuilder(this.getUnderstandingExperiment()!)
+                    UnderstandingAnswerScorer({
+                      question: this.question.stem || this.routeStem,
+                      referenceAnswer: readableText(this.getDetailContent())
+                    })
+                    Divider().color($r('app.color.common_gray_border'))
+                    Text('对照这道题的参考答案')
+                      .fontSize(18).fontWeight(FontWeight.Medium)
+                      .fontColor($r('app.color.black'))
+                  }
                   ReadAloudControl({ text: `${this.question.stem}。${this.getDetailContent()}` })
-                  if (this.contentType === 0) {
+                  if (this.contentType === 0 && !this.hasUnderstandingExperiment()) {
                     Button('练习回答并 AI 评分').width('100%').height(44).id('questionAiScore')
                       .onClick(() => auth.checkAuth({ url: 'pages/AiScorePage', params: {
                         question: this.question.stem, referenceAnswer: readableText(this.getDetailContent())
