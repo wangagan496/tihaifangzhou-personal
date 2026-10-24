@@ -2,6 +2,9 @@ import axios, { AxiosError, AxiosRequestConfig, AxiosResponse, InternalAxiosRequ
 import { contextManager } from './ContextManager'
 import { auth } from './Auth'
 import { isUnauthorizedStatus, shouldAttachAuth } from './AuthPolicy'
+import { BackgroundRequestConfig, isBackgroundRequest, requestErrorEffects, shouldShowBusinessErrorToast } from './RequestPolicy'
+
+export interface AppRequestConfig extends AxiosRequestConfig, BackgroundRequestConfig {}
 
 
 // 创建 axios 实例，配置基础请求地址
@@ -34,16 +37,18 @@ instance.interceptors.response.use(
       return res
     } else {
       // 业务失败，显示错误提示
-      contextManager.getUiCtx()?.getPromptAction().showToast({
-        message: res.data.message
-      })
+      if (shouldShowBusinessErrorToast(isBackgroundRequest(res.config as AppRequestConfig))) {
+        contextManager.getUiCtx()?.getPromptAction().showToast({ message: res.data.message })
+      }
       return Promise.reject(res)
     }
   },
   // 响应失败回调（网络错误、服务器错误等）
   (err: AxiosError) => {
+    const silent = isBackgroundRequest(err.config as AppRequestConfig | undefined)
+    const effects = requestErrorEffects(silent, isUnauthorizedStatus(err.response?.status))
     // 401 状态码表示 token 过期或无效
-    if (isUnauthorizedStatus(err.response?.status)) {
+    if (effects.expireSession) {
       // 清除本地存储的用户信息
       auth.removeUser()
       // 跳转到登录页面
@@ -54,7 +59,7 @@ instance.interceptors.response.use(
       contextManager.getUiCtx()?.getPromptAction().showToast({
         message: '登录已过期，请重新登录'
       })
-    } else {
+    } else if (effects.showToast) {
       // 显示其他错误信息
       contextManager.getUiCtx()?.getPromptAction().showToast({
         message: err.message
@@ -82,7 +87,7 @@ export interface IRes<T> {
 
 // 封装的请求函数：简化 API 调用，自动处理类型和响应数据
 // T: 响应数据的类型，D: 请求数据的类型
-export async function tgRequest<T = null, D = null>(config: AxiosRequestConfig) {
+export async function tgRequest<T = null, D = null>(config: AppRequestConfig) {
   // 发送请求并获取响应
   const res: AxiosResponse<IRes<T>> = await instance<null, AxiosResponse<IRes<T>>, D>(config)
   // 直接返回业务数据部分（res.data.data）
