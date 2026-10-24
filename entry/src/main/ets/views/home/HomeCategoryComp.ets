@@ -16,6 +16,7 @@ export struct HomeCategoryComp {
   @State isLoading: boolean = false
   @State loadFailed: boolean = false
   private requestSequence: number = 0
+  private readonly skeletonIndexes: number[] = [0, 1, 2, 3, 4, 5, 6, 7, 8]
   @StorageProp('isDark') isDark: boolean = false
 
   aboutToAppear(): void {
@@ -77,14 +78,14 @@ export struct HomeCategoryComp {
     if (this.isLoading) {
       // 用Column包起来，否则，有问题
       Column() {
-        ForEach(Array.from({ length: 9 }), () => {
+        ForEach(this.skeletonIndexes, (index: number) => {
           Row({ space: 10 }) {
             IvSkeleton({ widthValue: 100, heightValue: 25 })
             IvSkeleton({ widthValue: 100, heightValue: 25 })
             IvSkeleton({ widthValue: 100, heightValue: 25 })
           }
           .margin({ top: 10, bottom: 20 })
-        })
+        }, (index: number) => String(index))
       }
     } else if (this.loadFailed || this.questionTypeList.length === 0) {
       Column({ space: 12 }) {
