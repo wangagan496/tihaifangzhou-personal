@@ -14,6 +14,10 @@ import scoreSettingsPolicyTest from './ScoreSettingsPolicy.test'
 import messageReminderPolicyTest from './MessageReminderPolicy.test'
 import studyProgressStoreTest from './StudyProgressStore.test'
 import categoryPolicyTest from './CategoryPolicy.test'
+import audioCleanupPolicyTest from './AudioCleanupPolicy.test'
+import interviewTrackingPolicyTest from './InterviewTrackingPolicy.test'
+import understandingExperimentCatalogTest from './UnderstandingExperimentCatalog.test'
+import requestPolicyTest from './RequestPolicy.test'
 
 export default function testsuite() {
   trackingTest()
@@ -32,4 +36,8 @@ export default function testsuite() {
   messageReminderPolicyTest()
   studyProgressStoreTest()
   categoryPolicyTest()
+  audioCleanupPolicyTest()
+  interviewTrackingPolicyTest()
+  understandingExperimentCatalogTest()
+  requestPolicyTest()
 }
