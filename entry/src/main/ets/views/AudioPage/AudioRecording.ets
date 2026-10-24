@@ -10,3 +10,17 @@ export interface AudioRecording {
 export function hasUsableAudioFile(recording: AudioRecording): boolean {
   return recording.path.trim().length > 0 && recording.size > 0
 }
+
+export type RecorderPhase = 'idle' | 'warmup' | 'recording' | 'stopping'
+export type RecorderReaction = 'ignore' | 'finish' | 'abort'
+
+// AVRecorder 状态回调的处理策略：error/released 放弃本次录音；系统触发的暂停或停止
+// 在正式录音阶段按正常停止流程保存，热身阶段尚无有效内容则放弃；用户操作引起的切换忽略。
+export function reactToRecorderState(phase: RecorderPhase, state: string, bySystem: boolean): RecorderReaction {
+  if (phase === 'idle' || phase === 'stopping') { return 'ignore' }
+  if (state === 'error' || (bySystem && state === 'released')) { return 'abort' }
+  if (bySystem && (state === 'paused' || state === 'stopped')) {
+    return phase === 'recording' ? 'finish' : 'abort'
+  }
+  return 'ignore'
+}

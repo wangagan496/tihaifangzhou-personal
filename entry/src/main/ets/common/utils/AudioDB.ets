@@ -11,6 +11,32 @@ export interface InterviewAudioItem extends ValuesBucket {
   create_time: number
 }
 
+export function readAudioItem(row: relationalStore.ResultSet): InterviewAudioItem {
+  return {
+    id: row.getLong(row.getColumnIndex('id')),
+    user_id: row.getString(row.getColumnIndex('user_id')),
+    name: row.getString(row.getColumnIndex('name')),
+    path: row.getString(row.getColumnIndex('path')),
+    duration: row.getLong(row.getColumnIndex('duration')),
+    size: row.getLong(row.getColumnIndex('size')),
+    create_time: row.getLong(row.getColumnIndex('create_time'))
+  }
+}
+
+// 遍历完成或读取中途抛错都关闭结果集，避免 FD 和内存泄漏；读取错误继续向调用方抛出。
+export function readResultSetRows<T>(resultSet: relationalStore.ResultSet,
+  read: (row: relationalStore.ResultSet) => T): T[] {
+  try {
+    const list: T[] = []
+    while (resultSet.goToNextRow()) {
+      list.push(read(resultSet))
+    }
+    return list
+  } finally {
+    resultSet.close()
+  }
+}
+
 export class AudioDB {
   private store?: relationalStore.RdbStore
   private readonly tableName: string = 'interview_audio'
@@ -125,12 +151,12 @@ export class AudioDB {
     } catch (_) { return false }
   }
 
-  delete(id: number): Promise<boolean> {
-    if (!this.store) {
+  delete(id: number, userId: string): Promise<boolean> {
+    if (!this.store || !Number.isSafeInteger(id) || id <= 0 || !userId) {
       return Promise.resolve(false)
     }
     const predicates = new relationalStore.RdbPredicates(this.tableName)
-    predicates.equalTo('id', id)
+    predicates.equalTo('id', id).equalTo('user_id', userId)
     try {
       return this.store.delete(predicates).then((count): boolean => count > 0, (): boolean => false)
     } catch (_) {
@@ -138,12 +164,12 @@ export class AudioDB {
     }
   }
 
-  update(item: InterviewAudioItem): Promise<boolean> {
-    if (!this.store || item.id === null) {
+  update(item: InterviewAudioItem, userId: string): Promise<boolean> {
+    if (!this.store || item.id === null || !userId || item.user_id !== userId) {
       return Promise.resolve(false)
     }
     const predicates = new relationalStore.RdbPredicates(this.tableName)
-    predicates.equalTo('id', item.id)
+    predicates.equalTo('id', item.id).equalTo('user_id', userId)
     try {
       return this.store.update(item, predicates).then((count): boolean => count > 0, (): boolean => false)
     } catch (_) {
@@ -160,20 +186,7 @@ export class AudioDB {
     predicates.equalTo('user_id', userId).orderByDesc('create_time')
     try {
       return this.store.query(predicates).then((resultSet): InterviewAudioItem[] => {
-        const list: InterviewAudioItem[] = []
-        while (resultSet.goToNextRow()) {
-          list.push({
-            id: resultSet.getLong(resultSet.getColumnIndex('id')),
-            user_id: resultSet.getString(resultSet.getColumnIndex('user_id')),
-            name: resultSet.getString(resultSet.getColumnIndex('name')),
-            path: resultSet.getString(resultSet.getColumnIndex('path')),
-            duration: resultSet.getLong(resultSet.getColumnIndex('duration')),
-            size: resultSet.getLong(resultSet.getColumnIndex('size')),
-            create_time: resultSet.getLong(resultSet.getColumnIndex('create_time'))
-          })
-        }
-        resultSet.close()
-        return list
+        return readResultSetRows(resultSet, readAudioItem)
       }, (): InterviewAudioItem[] => [])
     } catch (_) {
       return Promise.resolve([])

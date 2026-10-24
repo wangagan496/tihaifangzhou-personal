@@ -1,7 +1,8 @@
 import { media } from '@kit.MediaKit'
 import { fileIo } from '@kit.CoreFileKit'
+import { BusinessError } from '@kit.BasicServicesKit'
 import { AudioBoComp } from './AudioBoComp'
-import { AudioRecording, hasUsableAudioFile } from './AudioRecording'
+import { AudioRecording, hasUsableAudioFile, reactToRecorderState, RecorderPhase } from './AudioRecording'
 
 @Component
 export struct AudioRecordComp {
@@ -18,6 +19,9 @@ export struct AudioRecordComp {
   // 降噪算法需约 400 ms 校准噪声基底，热身期间不标记 startTime。
   private readonly warmupMs: number = 400
   private isTransitioning: boolean = false
+  private stopping: boolean = false
+  private disposed: boolean = false
+  private warmupTimer: number = -1
   @State warmingUp: boolean = false
   onRecordEnd: (recording: AudioRecording) => void = () => {}
   onCaptureStateChange: (active: boolean) => void = () => {}
@@ -54,19 +58,28 @@ export struct AudioRecordComp {
     }
     try {
       return media.createAVRecorder().then((recorder) => {
+        // 官方指导要求 prepare 前订阅 stateChange 与 error；回调只处理当前录音实例。
+        this.watchRecorder(recorder)
         return recorder.prepare(config).then(() => {
           return recorder.start().then(() => {
+            if (this.disposed) {
+              // 启动期间已离页：不再进入录音状态，直接释放并删除未完成文件。
+              this.releaseQuietly(recorder)
+              this.clearRecordResources()
+              this.discardFile(path)
+              return false
+            }
             this.avRecorder = recorder
             this.timer = setInterval(() => { this.readAmplitude(recorder) }, 100)
             return true
           }, () => {
-            recorder.release().then(() => {}, () => {})
+            this.releaseQuietly(recorder)
             this.clearRecordResources()
             this.discardFile(path)
             return false
           })
         }, () => {
-          recorder.release().then(() => {}, () => {})
+          this.releaseQuietly(recorder)
           this.clearRecordResources()
           this.discardFile(path)
           return false
@@ -101,6 +114,68 @@ export struct AudioRecordComp {
     }
   }
 
+  private watchRecorder(recorder: media.AVRecorder): void {
+    try {
+      recorder.on('stateChange', (state: media.AVRecorderState, reason: media.StateChangeReason) => {
+        this.onRecorderState(recorder, state, reason === media.StateChangeReason.BACKGROUND)
+      })
+      // error 事件仅作提示；实例是否不可用以 state 为准，进入 error 时同样走 stateChange。
+      recorder.on('error', (_: BusinessError) => {
+        this.onRecorderState(recorder, recorder.state, false)
+      })
+    } catch (_) {
+      // 订阅失败不阻断录音，仍保留原有的 Promise 失败处理。
+    }
+  }
+
+  private unwatchRecorder(recorder: media.AVRecorder): void {
+    try {
+      recorder.off('stateChange')
+      recorder.off('error')
+    } catch (_) {
+      // 实例已释放时取消订阅可能失败，无需处理。
+    }
+  }
+
+  private releaseQuietly(recorder: media.AVRecorder): void {
+    this.unwatchRecorder(recorder)
+    recorder.release().then(() => {}, () => {})
+  }
+
+  private recorderPhase(): RecorderPhase {
+    if (this.stopping) { return 'stopping' }
+    return this.recording ? 'recording' : 'warmup'
+  }
+
+  // 同步系统中断和不可恢复错误：避免界面仍显示录音中，而实例已暂停、停止或失效。
+  private onRecorderState(recorder: media.AVRecorder, state: string, bySystem: boolean): void {
+    if (recorder !== this.avRecorder || this.disposed) { return }
+    const reaction = reactToRecorderState(this.recorderPhase(), state, bySystem)
+    if (reaction === 'finish') {
+      this.isTransitioning = true
+      this.finishRecording()
+    } else if (reaction === 'abort') {
+      this.abortRecording(recorder, state === 'error' ? '录音出错，本次录音已取消' : '录音被系统中断，本次录音已取消')
+    }
+  }
+
+  private abortRecording(recorder: media.AVRecorder, message: string): void {
+    const path = this.filePath
+    this.clearWarmup()
+    this.clearRecordResources()
+    this.releaseQuietly(recorder)
+    if (path) { this.discardFile(path) }
+    this.filePath = undefined
+    this.recording = false
+    this.isTransitioning = false
+    this.showToast(message)
+  }
+
+  private clearWarmup(): void {
+    if (this.warmupTimer !== -1) { clearTimeout(this.warmupTimer); this.warmupTimer = -1 }
+    this.warmingUp = false
+  }
+
   stopRecord(): Promise<boolean> {
     const recorder = this.avRecorder
     if (!recorder) {
@@ -108,6 +183,29 @@ export struct AudioRecordComp {
       return Promise.resolve(false)
     }
     this.clearTimer()
+    this.stopping = true
+    this.unwatchRecorder(recorder)
+    return this.stopAndRelease(recorder).then((stopped) => {
+      this.stopping = false
+      return stopped
+    })
+  }
+
+  private stopAndRelease(recorder: media.AVRecorder): Promise<boolean> {
+    if (recorder.state === 'stopped') {
+      // 系统已停止录制，文件已收尾；只需释放实例，按正常停止结果交给保存流程校验。
+      return recorder.release().then(() => {
+        this.avRecorder = undefined
+        this.closeFile()
+        this.maxAmplitude = 0
+        return true
+      }, () => {
+        this.avRecorder = undefined
+        this.closeFile()
+        this.maxAmplitude = 0
+        return false
+      })
+    }
     try {
       return recorder.stop().then(() => {
         return recorder.release().then(() => {
@@ -171,9 +269,18 @@ export struct AudioRecordComp {
     }
   }
 
-  // 退出页面也统一停止录制、释放 AVRecorder 并关闭文件描述符。
+  // 退出页面也统一停止录制、释放 AVRecorder 并关闭文件描述符；未保存的录音文件一并删除。
+  // 用户已点击停止时保留进行中的保存流程；启动中的流程由 disposed 标记在完成后清理。
   aboutToDisappear(): void {
-    if (this.avRecorder) { this.stopRecord() } else { this.clearRecordResources() }
+    this.disposed = true
+    this.clearWarmup()
+    if (this.avRecorder && !this.isTransitioning) {
+      const path = this.filePath
+      this.filePath = undefined
+      this.stopRecord().then(() => { if (path) { this.discardFile(path) } })
+    } else if (!this.isTransitioning) {
+      this.clearRecordResources()
+    }
   }
 
   private toggleRecord(): void {
@@ -185,7 +292,8 @@ export struct AudioRecordComp {
         // 热身期间按钮变橙色，400 ms 后降噪算法完成校准，再切到录音状态。
         this.isTransitioning = false
         this.warmingUp = true
-        setTimeout(() => {
+        this.warmupTimer = setTimeout(() => {
+          this.warmupTimer = -1
           this.warmingUp = false
           this.startTime = Date.now()
           this.recording = true
@@ -197,6 +305,11 @@ export struct AudioRecordComp {
       })
       return
     }
+    this.finishRecording()
+  }
+
+  // 用户点击停止与系统中断后的保存共用同一流程：停止、校验文件和振幅，再交给列表入库。
+  private finishRecording(): void {
     const path = this.filePath
     const duration = Date.now() - this.startTime
     this.stopRecord().then((stopped) => {
@@ -250,6 +363,7 @@ export struct AudioRecordComp {
           .width(22)
           .aspectRatio(1)
           .fillColor($r('app.color.white'))
+          .id('audioRecordToggle')
           .onClick(() => { this.toggleRecord() })
       }
       .justifyContent(FlexAlign.Center)

@@ -250,5 +250,5 @@ napi_value Init(napi_env env, napi_value exports)
     napi_define_properties(env, exports, 2, properties); return exports;
 }
 }
-static napi_module module = {1, 0, nullptr, Init, "audiopcm", nullptr, {0}};
+static napi_module module = {1, 0, nullptr, Init, "libaudiopcm.so", nullptr, {0}};
 extern "C" __attribute__((constructor)) void RegisterAudioPcm() { napi_module_register(&module); }
