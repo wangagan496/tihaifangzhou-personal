@@ -30,16 +30,29 @@ test('records isolate accounts and restore after empty local store', async () =>
   await first.put('user-a', 'history', item('3'));
   await first.put('user-b', 'collect', item('9'));
   assert.equal((await first.list('user-b', 'collect')).length, 1);
-  assert.equal((await first.list('user-a', 'collect'))[0].id, '1');
+  const firstCollect = await first.list('user-a', 'collect');
+  const firstCollectItem = firstCollect[0];
+  assert.ok(firstCollectItem);
+  assert.equal(firstCollectItem.id, '1');
   const restored = new FileRecordsStore(file);
   const collect = await restored.list('user-a', 'collect');
   assert.equal(collect.length, 1);
-  assert.equal(collect[0].id, '1');
-  assert.equal((await restored.list('user-a', 'like'))[0].id, '2');
-  assert.equal((await restored.list('user-a', 'history'))[0].id, '3');
+  const restoredCollectItem = collect[0];
+  assert.ok(restoredCollectItem);
+  assert.equal(restoredCollectItem.id, '1');
+  const like = await restored.list('user-a', 'like');
+  const likeItem = like[0];
+  assert.ok(likeItem);
+  assert.equal(likeItem.id, '2');
+  const history = await restored.list('user-a', 'history');
+  const historyItem = history[0];
+  assert.ok(historyItem);
+  assert.equal(historyItem.id, '3');
   assert.equal((await restored.list('user-b', 'history')).length, 0);
   const raw = JSON.parse(await readFile(file, 'utf8')) as { 'user-a': { collect: QuestionRecord[] } };
-  assert.equal(raw['user-a'].collect[0].stem, 'question-1');
+  const rawCollectItem = raw['user-a'].collect[0];
+  assert.ok(rawCollectItem);
+  assert.equal(rawCollectItem.stem, 'question-1');
 });
 
 test('records HTTP list put and delete stay on the owned user', async t => {
